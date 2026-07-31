@@ -1,0 +1,194 @@
+---
+title: "Quickstart"
+description: "Take an idea through the DevOS workflow to an accepted set of architecture decisions."
+---
+
+<Info>
+**Status: Prototype.** The interview, recommendation, and ledger stages exist as a working
+internal implementation. Blueprint and build pipeline stages are Concept — this quickstart
+ends at the Decision Ledger and describes the later stages as intent. See
+[Status definitions](/reference/status-definitions).
+</Info>
+
+## Purpose
+
+This page walks through one pass of the DevOS workflow: describing an idea, completing the
+product interview, reviewing scored recommendations, and accepting decisions into the ledger.
+Expect 30 to 60 minutes for a first project.
+
+## Before you start
+
+You need:
+
+- A DevOS account with a **Contributor** or **Owner** role in an organisation. A **Viewer**
+  can read a project but cannot accept decisions. See
+  [Roles and workspaces](/getting-started/roles-and-workspaces).
+- A rough idea of what you want to build. Two or three sentences is enough; the interview
+  extracts the rest.
+- Answers to, or an honest "I don't know" for, the constraint questions below.
+
+You do **not** need a finished specification. Arriving with a fully-formed spec defeats the
+purpose of the interview, which is to surface the assumptions inside it.
+
+### Constraints worth knowing in advance
+
+The interview will ask about these. "I don't know" is a valid, recorded answer — it becomes
+an evidence gap that lowers confidence rather than a blank the system fills in silently.
+
+- Who the users are, and what job they are hiring the software to do.
+- Whether you handle regulated data (payments, health records, personal data at scale).
+- Expected concurrency or transaction volume at launch and at 12 months.
+- Hard integration requirements — systems you must talk to.
+- Team size and the languages the team already knows.
+- Whether there is a delivery deadline that outranks technical preference.
+
+## Step 1 — Create a project and describe the idea
+
+Create a project in your customer workspace and enter the idea in plain language.
+
+```text
+A scheduling tool for independent physiotherapy clinics. Clinic staff book
+appointments, patients confirm by SMS, and clinicians see a daily list with
+treatment notes. Small clinics, two to fifteen staff. UK-based.
+```
+
+Write what you actually intend, including what you are unsure about. The interview branches
+on this text, so hedging produces a worse interview than admitting uncertainty.
+
+## Step 2 — Complete the product interview
+
+The interview adapts to your answers rather than walking a fixed questionnaire. The example
+above triggers a health-data branch because of "treatment notes", and an SMS-integration
+branch because of patient confirmation.
+
+Expect roughly 15 to 30 questions across six areas:
+
+| Area | What it establishes |
+| --- | --- |
+| Users and jobs | Who acts in the system and what outcome they need |
+| Functional scope | What the system must do, and explicitly must not do |
+| Non-functional constraints | Scale, latency, availability, cost ceilings |
+| Compliance | Regulated data classes and jurisdiction |
+| Integrations | External systems that are non-negotiable |
+| Team and delivery | Skills available, deadline pressure |
+
+Two rules make the output useful:
+
+1. **Answer "I don't know" when you don't know.** The brief records unknowns as unknowns.
+   A guess entered as fact produces a high-confidence recommendation built on nothing.
+2. **Name the non-goals.** What you are deliberately not building constrains the
+   architecture as much as what you are.
+
+The interview produces a **Product Brief** — the structured input to every later stage.
+Review it before continuing. Correcting the brief now is cheap; correcting it after
+decisions are accepted requires supersession.
+
+See [Product Interview Engine](/engines/product-interview-engine).
+
+## Step 3 — Review architecture recommendations
+
+DevOS matches the brief against the [Framework Library](/frameworks/overview) and produces
+several candidate architectures. You get candidates rather than a single answer because a
+brief containing genuine ambiguity should not yield false certainty.
+
+Each recommendation shows:
+
+- The framework it derives from, and why it matched.
+- A **confidence score** from 0.00 to 1.00.
+- The evidence supporting the score.
+- The **evidence gaps** that would move it.
+
+Read the gaps first. A recommendation at 0.45 with the gap "expected concurrency unknown" is
+telling you exactly what to go and find out. Supplying that answer and re-running is usually
+better than accepting a low-confidence recommendation.
+
+See [Decision Engine](/engines/decision-engine) and
+[Architecture Confidence Engine](/engines/architecture-confidence-engine).
+
+## Step 4 — Confidence review
+
+Work through the recommendations deliberately. For each one, decide:
+
+- **Accept** — the reasoning holds and the confidence is adequate for this choice.
+- **Reject** — record why. Rejections are kept; the reasoning is the value.
+- **Defer** — the evidence gap is worth closing before deciding.
+
+Nothing enters the ledger without a human accepting it. DevOS does not auto-accept, even at
+high confidence — see [Philosophy](/introduction/philosophy).
+
+## Step 5 — Accept decisions into the ledger
+
+Accepted recommendations become **decision records**: context, decision, alternatives
+considered, consequences, and the confidence at the time of acceptance.
+
+Records are immutable. When a decision changes later, the original is marked superseded and
+points at its replacement, so the history of the project's architecture stays legible.
+
+At this point you have the durable output of the current DevOS implementation: a structured
+brief and a ledger that explains the architecture and the reasoning behind it.
+
+See [Decision Ledger](/engines/decision-ledger).
+
+## What comes next
+
+<Note>
+Blueprint generation and the AI build pipeline are **Concept** status. They are specified
+but not implemented. The description below is intent.
+</Note>
+
+Once implemented, the ledger will compile into a **blueprint** — module boundaries, data
+model, interface contracts, milestones, and test strategy — which in turn compiles into a
+**build pipeline** of ordered AI build prompts and human work items, each traceable to the
+decision that justifies it.
+
+See [Blueprint Engine](/engines/blueprint-engine) and
+[AI Build Pipeline](/engines/build-pipeline).
+
+## The full workflow
+
+```mermaid
+flowchart LR
+  A["Idea"] --> B["Product Interview"]
+  B --> C["Product Brief"]
+  C --> D["Recommendations"]
+  D --> E["Confidence Review"]
+  E --> F["Decision Ledger"]
+  F -.-> G["Blueprint"]
+  G -.-> H["Build Pipeline"]
+  H -.-> I["Deployment"]
+```
+
+Solid arrows are implemented at Prototype status. Dashed arrows are Concept.
+
+## Common mistakes
+
+| Mistake | Consequence | Instead |
+| --- | --- | --- |
+| Entering a polished spec instead of an idea | The interview validates your assumptions rather than testing them | Describe the problem, let the interview extract the spec |
+| Guessing at constraints to avoid "I don't know" | High confidence resting on invented evidence | Record the unknown; close the gap deliberately |
+| Accepting every recommendation in one pass | A ledger full of choices nobody actually weighed | Accept, reject, or defer each one on its merits |
+| Ignoring evidence gaps | Reversals later, for reasons that were visible now | Close the highest-impact gap and re-run |
+| Skipping non-goals | An architecture scoped for work you will never do | State what you are not building |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Product workflow" icon="diagram-project" href="/getting-started/product-workflow">
+    The eight stages in detail, with the artefact each produces.
+  </Card>
+  <Card title="Create your first project" icon="folder-plus" href="/getting-started/create-first-project">
+    A worked example from idea to ledger.
+  </Card>
+  <Card title="Roles and workspaces" icon="users" href="/getting-started/roles-and-workspaces">
+    Who can do what, and where.
+  </Card>
+  <Card title="Terminology" icon="book" href="/introduction/terminology">
+    The vocabulary used throughout this documentation.
+  </Card>
+</CardGroup>
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-07-29 | Initial page. |

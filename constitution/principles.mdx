@@ -1,0 +1,204 @@
+---
+title: "Principles"
+description: "The ten binding articles of the DevOS Constitution."
+---
+
+## Purpose
+
+These ten articles are binding on all DevOS product, engineering, and AI decisions. Each
+states a requirement, the rationale, and how compliance is verified. Requirement keywords
+follow RFC 2119 — see [Constitution: Introduction](/constitution/introduction).
+
+The convictions behind these articles are discussed in
+[Philosophy](/introduction/philosophy). This page is the enforceable form.
+
+---
+
+## Article 1 — Uncertainty is disclosed
+
+Every recommendation, score, or generated artefact that rests on incomplete information
+**MUST** disclose that incompleteness at the point of use.
+
+DevOS **MUST NOT** present a value derived from a default, an inference, or a model guess as
+though it were user-supplied fact. Where an input is unknown, the unknown **MUST** be
+recorded as an unknown and propagated forward as a named evidence gap.
+
+**Rationale.** A fluent answer that conceals its foundations is worse than a hedged one,
+because it removes the reader's ability to judge it.
+
+**Verification.** Every declared unknown in a product brief resolves to a named evidence gap
+in the confidence review. A recommendation with no stated gaps must be demonstrably
+gap-free, not merely silent.
+
+---
+
+## Article 2 — Decisions are immutable records
+
+A decision, once accepted, **MUST NOT** be edited. A changed decision **MUST** be expressed
+as a new record that supersedes the prior one, with the prior record retained and marked.
+
+Every decision record **MUST** contain context, the decision, alternatives considered with
+their rejection reasons, consequences, and the confidence at the time of acceptance.
+
+**Rationale.** The history of reasoning is the asset. A mutable record is a setting, and a
+project's architecture becomes archaeological rather than legible.
+
+**Verification.** Supersession chains are complete and traversable. No storage operation
+mutates an accepted record's substantive fields.
+
+---
+
+## Article 3 — Artefacts flow forward only
+
+Each workflow stage **MUST** consume only the artefact immediately upstream, and **MUST NOT**
+introduce a constraint absent from that input.
+
+Where a downstream stage requires information its input lacks, the correct response is to
+amend the upstream artefact through its own process. Patching the downstream artefact
+directly **MUST NOT** be permitted.
+
+**Rationale.** Sideways injection is how documented designs quietly stop describing the
+system they claim to describe.
+
+**Verification.** Every element of a downstream artefact resolves to a specific upstream
+element. A blueprint element with no originating decision is a defect that blocks
+compilation.
+
+---
+
+## Article 4 — Humans accept; systems recommend
+
+Conversion of a recommendation into a decision **MUST** require an act by an identified
+human, recorded with identity and timestamp.
+
+No confidence score, threshold, or configuration **MAY** authorise automatic acceptance.
+
+**Rationale.** Accountability is what makes the ledger worth consulting. A ledger of machine
+output records what a system did, not what anyone committed to.
+
+**Verification.** Every decision record has exactly one accepting human identity. No code
+path creates an accepted record without one.
+
+---
+
+## Article 5 — Status is declared honestly
+
+Every capability **MUST** declare exactly one status: Concept, Planned, Prototype, Private
+beta, Beta, or Production.
+
+Unbuilt behaviour **MUST NOT** be described in the present tense, in documentation, in the
+product interface, or in any generated artefact. Status promotion **MUST** be supported by
+linked evidence.
+
+**Rationale.** Status honesty is what allows a reader to trust anything else on the page.
+
+**Verification.** Page status matches the authoritative capability table. Promotions link to
+a demo, test run, or release note.
+
+---
+
+## Article 6 — Frameworks name their failure modes
+
+Every framework in the library **MUST** state when it is the wrong choice, what breaks first
+under stress, and the conditions under which it should be abandoned.
+
+A framework that documents only its strengths **MUST NOT** be published.
+
+**Rationale.** A reference architecture exists to support a choice. Strengths alone cannot
+discriminate between candidates.
+
+**Verification.** Each framework page contains a populated "When not to use this" section
+and named failure modes. See [Framework standard](/frameworks/framework-standard).
+
+---
+
+## Article 7 — Tenant isolation is absolute
+
+No operation **MAY** read, write, export, or retrieve data across an organisation boundary.
+This applies equally to user-initiated queries, background jobs, analytics, support access,
+and AI agent retrieval.
+
+Cross-organisation access **MUST NOT** be implemented as a permission that can be granted.
+
+**Rationale.** Isolation that is configurable is isolation that will eventually be
+misconfigured.
+
+**Verification.** Every data access path is scoped at the organisation boundary by
+construction. Agent retrieval contexts are organisation-scoped before retrieval, not
+filtered after. See [Multi-tenancy](/architecture/multi-tenancy).
+
+---
+
+## Article 8 — Agents operate under explicit contracts
+
+Every AI agent **MUST** have a documented contract stating its permitted inputs, its output
+schema, its authority limits, and its escalation path.
+
+An agent **MUST NOT** accept a decision, alter a ledger record, widen its own scope, or act
+outside its declared authority. Agent output **MUST** be attributable to the agent, the
+model, and the invoking context.
+
+**Rationale.** Agents are useful in proportion to how bounded they are.
+
+**Verification.** Each agent has a published contract conforming to
+[Agent standard](/agents/agent-standard). Outputs carry attribution metadata.
+
+---
+
+## Article 9 — Prefer inspectable mechanisms
+
+Where two mechanisms satisfy a requirement, DevOS **SHOULD** choose the one a reviewer can
+verify by reading it.
+
+Confidence scoring, ledger state transitions, and artefact compilation **MUST** be
+deterministic and auditable given the same inputs. Emergent or opaque behaviour **MUST NOT**
+be used for these three.
+
+**Rationale.** DevOS asks users to trust its reasoning. Reasoning that cannot be inspected
+cannot be trusted, and cannot be debugged when it is wrong.
+
+**Verification.** Compilation is reproducible. Ledger transitions form a small enumerated
+state machine. Scoring inputs and weights are recorded with each score.
+
+---
+
+## Article 10 — Documentation is part of the system
+
+This documentation set **MUST** be maintained as a functional component, not as
+commentary.
+
+Headings are part of the retrieval contract for AI agents; renaming one **MUST** be treated
+as a breaking change requiring a redirect or a version history note. Normative pages
+**MUST** carry a version history. Documentation that contradicts implemented behaviour
+**MUST** be corrected with the same urgency as a product defect.
+
+**Rationale.** DevOS agents retrieve from this repository. Inaccurate documentation is a
+runtime fault, not an editorial lapse.
+
+**Verification.** Normative pages carry version histories. Heading changes appear in version
+history. No page describes behaviour contradicting the authoritative status table.
+
+---
+
+## Applying the articles
+
+Most review disputes reduce to four questions:
+
+| Question | Article |
+| --- | --- |
+| Is unbuilt behaviour described in the present tense? | 5 |
+| Can a downstream artefact contain a choice no human accepted? | 3, 4 |
+| Is an unknown being silently defaulted? | 1 |
+| Can any path cross an organisation boundary? | 7 |
+
+## Deviations
+
+Articles stated with **MUST** admit no deviation. Articles stated with **SHOULD** permit a
+deviation recorded in the relevant decision record, naming the article, the reason, and the
+accepted consequence. An undocumented deviation is a defect regardless of its merit.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-07-29 | Initial ten articles ratified. |

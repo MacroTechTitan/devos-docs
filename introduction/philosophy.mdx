@@ -1,0 +1,113 @@
+---
+title: "Philosophy"
+description: "The design convictions that shape how DevOS behaves and what it refuses to do."
+---
+
+## Purpose
+
+This page records the convictions behind DevOS's design. They are stated as trade-offs
+rather than values, because a principle that costs nothing constrains nothing. Where a
+conviction has a price, the price is named.
+
+These convictions are elaborated into binding standards in the
+[DevOS Constitution](/constitution/introduction).
+
+## 1. Documented uncertainty beats confident guessing
+
+A system that admits it does not know something is more useful than one that produces a
+fluent answer regardless. Every recommendation therefore carries a confidence score, the
+evidence supporting it, and the gaps that would change it.
+
+**The cost:** users sometimes see a low score and want a straight answer. We show the score
+anyway, and name what would raise it.
+
+## 2. Decisions are records, not settings
+
+A decision has a context, a rationale, alternatives that were rejected, and consequences. A
+setting has a current value. Treating decisions as records means the ledger is append-only:
+records are superseded, never edited in place.
+
+**The cost:** more friction to change a decision, and a ledger that grows monotonically.
+That is the correct trade — the history is the asset.
+
+## 3. Artefacts flow forward, never sideways
+
+Each stage consumes the previous stage's artefact and produces the next. A blueprint may
+only contain choices traceable to a ledger entry. A ledger entry may only rest on the
+brief and the recommendations. Nothing may inject a constraint the brief does not contain.
+
+**The cost:** a missing detail must be resolved by going back to the interview rather than
+patched at the point of pain.
+
+## 4. Structure is what makes AI output coherent
+
+AI coding tools do not fail for lack of capability; they fail when given ambiguous scope.
+The fix is not better prose in a prompt, it is an explicit contract: which decisions apply,
+which interfaces must be honoured, what is out of scope, what "done" means.
+
+**The cost:** DevOS must do real specification work before any prompt is emitted. There is
+no shortcut from idea to code that preserves coherence.
+
+## 5. Frameworks must name their failure modes
+
+A reference framework that lists only its strengths cannot help anyone choose. Every
+framework in the library must state when it is the wrong choice, and what breaks first
+under stress.
+
+**The cost:** frameworks are harder to write, and less flattering to read.
+
+## 6. Humans accept decisions; the system does not
+
+DevOS recommends, scores, and drafts. A human accepts. Automatic acceptance would make the
+ledger a log of machine output rather than a record of commitments, and would remove the
+accountability that makes the ledger worth consulting.
+
+**The cost:** DevOS cannot run a project end to end unattended. This is intentional.
+
+## 7. Status honesty is a product feature
+
+Every capability declares whether it is Concept, Planned, Prototype, Private beta, Beta, or
+Production. Describing unbuilt behaviour in the present tense is treated as a defect, in
+documentation and in the interface.
+
+**The cost:** the product looks less finished than a vaguer description would allow.
+
+## 8. The documentation is part of the system
+
+DevOS's knowledge base is retrieved by DevOS's own agents. Stable headings, self-contained
+paragraphs, and accurate status labels are therefore functional requirements, not editorial
+preferences. Renaming a heading is a breaking change.
+
+**The cost:** documentation changes are governed, reviewed, and versioned like code.
+
+## 9. Prefer boring, inspectable mechanisms
+
+Given a choice between a clever mechanism and one a reviewer can verify by reading it, DevOS
+takes the second. Confidence scoring is explicit and auditable rather than emergent. Ledger
+transitions are a small, enumerated state machine.
+
+**The cost:** some capability is left on the table in exchange for explicability.
+
+## 10. Narrow the product before diluting it
+
+DevOS solves the interval between intent and implementation. Requests to become a tracker,
+a code host, or a general assistant are declined — not because those are bad products, but
+because the value here depends on doing one handoff extremely well.
+
+**The cost:** users need other tools alongside DevOS, and we must integrate rather than
+absorb.
+
+## How these apply in review
+
+Every specification and pull request is checked against these convictions. The two that
+most often decide a review:
+
+- Does this describe unbuilt behaviour in the present tense? (Conviction 7)
+- Does this let a downstream artefact contain a choice no human accepted? (Convictions 3
+  and 6)
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-07-29 | Initial page. |

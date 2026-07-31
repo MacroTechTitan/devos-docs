@@ -1,0 +1,132 @@
+---
+title: "Terminology"
+description: "The core DevOS vocabulary, used consistently across all documentation."
+---
+
+## Purpose
+
+DevOS documentation uses a controlled vocabulary. The terms below have exactly one meaning
+throughout this repository, and pages must not introduce synonyms for them. This page is
+the normative source; [Glossary](/reference/glossary) is the full alphabetical reference,
+including secondary and platform terms.
+
+## Core artefacts
+
+| Term | Definition |
+| --- | --- |
+| **Idea** | The user's initial free-text description of what they intend to build. Unstructured input, not an artefact. |
+| **Product Brief** | The structured output of the product interview: users, jobs, scope, constraints, compliance obligations, and scale expectations. The single input to architecture recommendation. |
+| **Recommendation** | A candidate architecture proposed by the Decision Engine, matched from the Framework Library against a brief. Always carries a confidence assessment. Not yet a decision. |
+| **Confidence Score** | A normalised value from 0.00 to 1.00 attached to a recommendation, accompanied by supporting evidence and named evidence gaps. |
+| **Decision** | A choice a human has accepted, recorded immutably in the Decision Ledger with context, alternatives, and consequences. |
+| **Decision Record** | The stored form of a decision. Versioned and append-only; superseded rather than edited. |
+| **Decision Ledger** | The complete, ordered set of decision records for a project. |
+| **Blueprint** | The implementation plan compiled from the ledger: modules, data model, interface contracts, milestones, and test strategy. |
+| **Build Unit** | The smallest scoped item in a build pipeline — either an AI build prompt or a human work item. |
+| **Build Pipeline** | The ordered set of build units compiled from a blueprint, with their dependencies. |
+
+## Structural terms
+
+| Term | Definition |
+| --- | --- |
+| **Organisation** | The top-level tenant boundary. Owns projects, members, and billing. All data isolation is enforced at this boundary. |
+| **Workspace** | A member's working context within an organisation. Two kinds exist: customer workspace and admin workspace. |
+| **Project** | A single thing being designed and built. Owns exactly one brief, one ledger, and zero or more blueprints. |
+| **Member** | A user account's membership in an organisation, carrying exactly one role. |
+| **Role** | A named set of permissions. See [Permissions](/product/permissions). |
+| **Framework** | A reference architecture for a class of system, written to the framework standard. |
+| **Engine** | A named DevOS component that transforms one artefact into the next. There are seven. |
+| **Platform layer** | The components engines depend on but that transform no artefact: AI Connect and the Plugin System. Not engines. |
+| **Agent** | An AI component operating under a published contract, invoked through AI Connect to perform a bounded task. |
+
+## Platform terms
+
+These name the two platform-layer capabilities. Neither is an engine: neither consumes nor
+produces a workflow artefact, and neither appears in the artefact chain. See
+[System overview](/architecture/system-overview).
+
+| Term | Definition |
+| --- | --- |
+| **AI Connect** | The orchestration layer between DevOS and AI agents. Every model invocation passes through it. |
+| **Agent registry** | The catalogue of agents available to an organisation, with their contracts and versions. |
+| **Capability** | A named unit of work requested by name rather than by provider. Used for both agent capabilities (AI Connect) and plugin capabilities (Plugin System). |
+| **Capability routing** | Resolving a requested capability to a specific agent and contract version. |
+| **Prompt envelope** | The complete structured input to an agent execution: scope, context, constraints, authority limits, and output schema. |
+| **Execution session** | A tracked, resumable unit of agent execution. |
+| **Result envelope** | The structured output of an execution: content, attribution, cost, gaps, and validation state. |
+| **Multi-agent workflow** | A composition, declared in advance, in which several agent executions contribute to one engine request. |
+| **Plugin System** | The extension model through which DevOS connects to every external system. |
+| **Plugin** | A registered, versioned extension providing one or more capabilities to DevOS. |
+| **Plugin class** | The category of external system a plugin serves: AI provider, deployment, repository, database, communication, or authentication. |
+| **Manifest** | A plugin's declaration of identity, version, capabilities, permissions, configuration, and dependencies. |
+| **Registration** | Making a plugin known to DevOS. Distinct from installation. |
+| **Installation** | Enabling a registered plugin for one organisation, with its configuration and credentials. |
+| **Degraded mode** | Operation with an optional plugin capability unavailable, surfaced to affected users. |
+
+## Process terms
+
+| Term | Definition |
+| --- | --- |
+| **Product Interview** | The adaptive question sequence that produces a brief. Branches on answers; records unknowns explicitly. |
+| **Confidence Review** | The stage at which a user examines recommendations, their scores, and their evidence gaps before accepting any decision. |
+| **Acceptance** | The human act of converting a recommendation into a decision record. |
+| **Supersession** | Replacing a decision record with a newer one. The prior record remains, marked superseded, with a pointer to its successor. |
+| **Compilation** | The derivation of a downstream artefact from an upstream one: ledger to blueprint, blueprint to pipeline. Deterministic given the same inputs. |
+| **Traceability** | The property that every element of a downstream artefact can be attributed to a specific upstream element. |
+
+## Status terms
+
+Every capability page declares exactly one status. These labels are normative and are
+defined in full in [Status definitions](/reference/status-definitions).
+
+| Status | Meaning |
+| --- | --- |
+| **Concept** | Under design. No implementation exists. |
+| **Planned** | Committed and scoped. Implementation not started or early. |
+| **Prototype** | Working internal implementation. Unstable, unsupported. |
+| **Private beta** | Available to selected users. Behaviour may change with notice. |
+| **Beta** | Broadly available and stable enough to build on. Known gaps documented. |
+| **Production** | Generally available, supported, under change control. |
+
+## Requirement language
+
+DevOS specifications use RFC 2119 keywords with their standard meanings:
+
+| Keyword | Meaning |
+| --- | --- |
+| **MUST** / **MUST NOT** | An absolute requirement. A violation is a defect. |
+| **SHOULD** / **SHOULD NOT** | A strong recommendation. Deviation requires a recorded reason. |
+| **MAY** | Genuinely optional. |
+
+## Terms we do not use
+
+Avoiding synonyms is what makes the vocabulary retrievable. Use the right-hand column.
+
+| Do not use | Use instead |
+| --- | --- |
+| Spec, requirements doc, PRD | Product Brief |
+| ADR, decision log, architecture note | Decision Record |
+| Plan, spec, implementation doc | Blueprint |
+| Task, ticket, story | Build Unit |
+| Template (for architectures) | Framework |
+| Tenant, account, company | Organisation |
+| Confidence percentage | Confidence Score (a 0.00–1.00 value) |
+| Model, LLM (as a DevOS component) | Agent |
+| Integration, connector, adapter | Plugin |
+| Provider (as a DevOS component) | Plugin, qualified by class — "AI provider plugin" |
+| Agent gateway, model router, AI layer | AI Connect |
+| Prompt (as the input to an execution) | Prompt envelope |
+
+"Integration" remains acceptable when describing the general idea of connecting to an external
+system. It MUST NOT be used to name a DevOS component — DevOS has no integrations, only plugins.
+See [Plugin System](/architecture/plugin-system).
+
+"Template" is reserved for the document templates in [Reference](/reference/glossary), not
+for reference architectures.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-07-29 | Initial page. |
+| 1.1 | 2026-07-30 | Added Platform terms section for AI Connect and the Plugin System. Redefined **Agent** as invoked through AI Connect rather than directly by an engine. Added **Platform layer**. Added four prohibited synonyms, including Integration → Plugin. |

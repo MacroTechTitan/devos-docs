@@ -1,0 +1,105 @@
+---
+title: "Vision"
+description: "The outcome DevOS is built to produce, and how we will know it worked."
+---
+
+## Purpose
+
+This page states what DevOS is aiming at over a multi-year horizon, and the conditions
+under which we would consider the product a success or a failure. It is a statement of
+intent, not a description of shipped capability.
+
+## The vision
+
+**Every software project should begin with a documented, reviewable, defensible design —
+and producing that design should take hours, not weeks.**
+
+Today, the gap between an idea and a sound technical plan is bridged by whoever happens to
+be senior enough to hold the whole picture in their head. That approach does not scale, it
+does not survive staff turnover, and it produces plans that cannot be audited because they
+were never written down.
+
+DevOS aims to make the design phase a repeatable, inspectable process that produces
+artefacts a stranger could pick up and act on.
+
+## What we are building toward
+
+### Design intent becomes a durable artefact
+
+The product brief stops being a conversation and becomes a structured document that every
+downstream stage reads. When an implementer asks "why is it built this way?", the answer is
+a link, not a memory.
+
+### Recommendations carry honest uncertainty
+
+Architecture advice is delivered with a confidence score and named evidence gaps. A system
+that says "0.42 confidence, because we do not know your expected concurrency" is more
+useful than one that answers with unearned assurance. Calibration matters more than
+apparent competence.
+
+### Decisions are immutable and superseding
+
+The Decision Ledger records what was decided, when, on what evidence, and what was rejected.
+Records are superseded rather than edited, so the reasoning history survives. A project's
+architecture becomes legible over time rather than archaeological.
+
+### AI build work is constrained by design, not by prompt craft
+
+AI coding tools produce coherent output when they are given boundaries: the decisions that
+apply, the interfaces they must honour, the scope they must not exceed. DevOS aims to
+generate those boundaries automatically, so quality does not depend on how well an
+individual writes prompts.
+
+### The framework library encodes real experience
+
+Reference frameworks capture what has actually worked for a class of system — including the
+constraints that make a pattern inappropriate. A framework that only lists its strengths is
+marketing; a framework that names its failure modes is engineering.
+
+## What success looks like
+
+We will judge DevOS against outcomes, not usage:
+
+| Outcome | Signal |
+| --- | --- |
+| Design work is faster | Time from idea to accepted architecture decisions falls materially against the team's own prior baseline. |
+| Decisions survive | A project's ledger still explains its architecture accurately six months after the decisions were made. |
+| Confidence is calibrated | High-confidence recommendations are reversed less often than low-confidence ones, measured on real projects. |
+| Blueprints are actionable | Implementers begin work from the blueprint without needing a separate verbal briefing. |
+| Rework falls | Fewer architecture reversals attributable to a constraint that was known but never recorded. |
+
+We have not yet measured any of these. Establishing the baselines is part of the work; see
+[Roadmap](/introduction/roadmap).
+
+## What would mean we failed
+
+Stating the failure conditions is part of the vision, because a vision that cannot be
+falsified is a slogan.
+
+- **Confidence scores that are not calibrated.** If a 0.9 score is wrong as often as a 0.5
+  score, the scoring is theatre and should be removed rather than tuned.
+- **Ledgers nobody reads.** If decision records are written and never consulted, DevOS has
+  added ceremony rather than clarity.
+- **Blueprints that need translation.** If every blueprint requires a senior engineer to
+  reinterpret it before work can start, the artefact has failed at its only job.
+- **Recommendations that regress to a default.** If the Decision Engine effectively
+  recommends the same stack regardless of brief, the framework matching is decorative.
+- **Documentation that drifts from behaviour.** If pages describe capabilities that do not
+  work as written, the knowledge base becomes a liability — for humans and for the agents
+  that retrieve it.
+
+## Boundaries of the vision
+
+DevOS deliberately does not aim to:
+
+- Replace engineering judgement. Every ledger entry requires human acceptance.
+- Write and own the application code.
+- Become a project management or issue-tracking system.
+- Guarantee outcomes. A well-documented design can still be the wrong design; DevOS makes
+  that visible earlier, not impossible.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-07-29 | Initial page. |

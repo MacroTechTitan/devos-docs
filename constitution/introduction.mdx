@@ -1,0 +1,114 @@
+---
+title: "Constitution: Introduction"
+description: "What the DevOS Constitution is, what it binds, and how it is amended."
+---
+
+## Purpose
+
+The DevOS Constitution is the set of binding standards that constrain product, engineering,
+and AI decisions across DevOS. Where a Constitution article and any other document conflict,
+the Constitution governs.
+
+It exists because a growing organisation cannot rely on shared intuition. Standards that are
+not written down are renegotiated in every review, and drift toward whatever is expedient.
+
+## What the Constitution binds
+
+| Bound | Not bound |
+| --- | --- |
+| DevOS platform product decisions | A customer's choices for their own system |
+| DevOS engineering practice | Third-party tool internals |
+| DevOS AI agent behaviour | The output quality of a model we do not control |
+| This documentation repository | Marketing and commercial material |
+| Framework and agent authoring | Individual writing style within the content standard |
+
+The Constitution constrains what DevOS does. It does not constrain what DevOS users choose
+to build — DevOS recommends and records; it does not impose architecture on customers.
+
+## Structure
+
+<CardGroup cols={2}>
+  <Card title="Mission" icon="bullseye" href="/constitution/mission">
+    What DevOS exists to do, and what it declines to do.
+  </Card>
+  <Card title="Principles" icon="compass" href="/constitution/principles">
+    The ten binding articles.
+  </Card>
+  <Card title="Product standards" icon="box" href="/constitution/product-standards">
+    Requirements on the product surface and artefacts.
+  </Card>
+  <Card title="Engineering standards" icon="code" href="/constitution/engineering-standards">
+    Requirements on implementation, testing, and operations.
+  </Card>
+  <Card title="AI standards" icon="robot" href="/constitution/ai-standards">
+    Requirements on agent behaviour, attribution, and confidence.
+  </Card>
+  <Card title="Governance" icon="scale-balanced" href="/constitution/governance">
+    Who decides, and by what process.
+  </Card>
+  <Card title="Versioning" icon="tag" href="/constitution/versioning">
+    How the Constitution is versioned and amended.
+  </Card>
+</CardGroup>
+
+## How to read it
+
+Articles use RFC 2119 requirement language:
+
+| Keyword | Meaning |
+| --- | --- |
+| **MUST** / **MUST NOT** | Absolute. A violation is a defect and blocks release. |
+| **SHOULD** / **SHOULD NOT** | Strong recommendation. Deviation requires a recorded reason in the relevant decision record. |
+| **MAY** | Genuinely optional. |
+
+A **SHOULD** deviation is legitimate when documented. An undocumented deviation is a defect
+regardless of how reasonable it was.
+
+## Precedence
+
+When documents conflict, this order applies:
+
+1. The Constitution
+2. Accepted RFCs
+3. Engine, product, and architecture specifications
+4. Reference material and templates
+5. Guidance pages and examples
+
+A specification that contradicts the Constitution is wrong and must be corrected, not
+reconciled. If the Constitution is the thing that is wrong, amend it through the process in
+[Versioning](/constitution/versioning) — do not work around it.
+
+## Compliance
+
+Compliance is checked at three points:
+
+| Point | Check |
+| --- | --- |
+| Design review | Does the proposed behaviour satisfy the applicable articles? |
+| Pull request review | Does the implementation or document violate a MUST? |
+| Release review | Are all outstanding SHOULD deviations recorded with reasons? |
+
+A reviewer may block a change by citing an article. The response is either to comply, to
+record a justified deviation where the article permits one, or to open an amendment RFC.
+Arguing that an article is inconvenient is not a response.
+
+## Amendment
+
+The Constitution is amended only through the RFC process, with the review requirements set
+out in [Governance](/constitution/governance) and the versioning rules in
+[Versioning](/constitution/versioning). Amendments are never made silently; every change is
+recorded in the version history of the affected article.
+
+## Status
+
+**Status: Production.** The Constitution is in force. Unlike capability documentation, its
+status refers to the governance instrument itself, not to any implementation.
+
+Articles that constrain unbuilt capabilities are still binding on the design of those
+capabilities.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-07-29 | Initial Constitution ratified. |

@@ -1,0 +1,208 @@
+---
+title: "Personas"
+description: "The user types DevOS is designed for, what each needs, and who it is not for."
+---
+
+## Purpose
+
+This page defines the user types DevOS designs for. Personas exist to settle design
+arguments: a proposal that serves no persona's stated need is not a product improvement.
+
+These are role archetypes derived from the problem DevOS addresses, not profiles of named
+individuals or research participants.
+
+## Persona summary
+
+| Persona | Primary need | Workspace | Typical role |
+| --- | --- | --- | --- |
+| Technical founder | Make defensible architecture choices without a senior team | Customer | Owner |
+| Engineering lead | Stop re-explaining decisions and losing their reasoning | Customer | Contributor or Admin |
+| Solo consultant | Produce design documentation clients can act on | Customer | Owner |
+| Implementing engineer | Understand why the system is built this way | Customer | Viewer |
+| Platform administrator | Control access and maintain the framework library | Admin | Admin |
+| Auditor or reviewer | Verify that decisions were made and recorded properly | Customer | Viewer |
+
+---
+
+## Technical founder
+
+**Situation.** Building a product with a small team, or alone. Has enough technical judgement
+to know that the early architecture choices matter, and not enough breadth to be confident
+across all of them.
+
+**Needs**
+
+- Candidate architectures with honest confidence, not a single confident answer.
+- To know which of their unknowns actually matters — most do not.
+- A record they can hand to the first engineer they hire.
+
+**What they do**
+
+Run the interview themselves. Spend real time on the confidence review, because the evidence
+gaps tell them what to go and find out. Accept decisions personally.
+
+**Design implications**
+
+- Evidence gaps must be phrased so a non-specialist can act on them. "Expected concurrency
+  unknown" is useful; a purely technical restatement is not.
+- Recommendations must include the operational cost of running the architecture, since this
+  persona will be the one operating it.
+- Low confidence must not read as product failure. The gap is the deliverable.
+
+---
+
+## Engineering lead
+
+**Situation.** Responsible for a system built by several people over time. Spends
+disproportionate effort re-explaining choices made months ago, and re-litigating decisions
+whose original constraints have been forgotten.
+
+**Needs**
+
+- Decision records that survive staff turnover and still explain the architecture accurately.
+- Rejected alternatives preserved with their reasons, so old arguments do not restart.
+- A way to change a decision without erasing the history of the previous one.
+
+**What they do**
+
+Use the ledger as the reference point in design discussions. Supersede decisions when
+constraints change. Point new joiners at the ledger rather than repeating themselves.
+
+**Design implications**
+
+- Supersession must be a first-class operation, not a workaround.
+- The ledger must be readable as a narrative, not only queryable as records.
+- Attribution must survive a member leaving the organisation — see
+  [Roles and workspaces](/getting-started/roles-and-workspaces).
+
+---
+
+## Solo consultant
+
+**Situation.** Designs systems for clients who will build them with someone else. The design
+document is the deliverable.
+
+**Needs**
+
+- Output that a third party can implement without a verbal briefing.
+- Visible reasoning, because the reasoning is what the client is paying for.
+- Reusable structure across engagements without reusing conclusions.
+
+**What they do**
+
+Run many short projects. Rely on the blueprint as a client-facing artefact. Care about the
+framework library because it encodes reusable judgement.
+
+**Design implications**
+
+- Blueprints must stand alone. A blueprint requiring the author present has failed.
+- Framework reuse must not leak one client's context into another's project — Article 7 in
+  [Principles](/constitution/principles).
+- Export matters more for this persona than for any other.
+
+---
+
+## Implementing engineer
+
+**Situation.** Building from someone else's design. Did not attend the decisions and cannot
+ask about half of them.
+
+**Needs**
+
+- To know which decisions constrain the code they are writing right now.
+- To understand why, so they do not accidentally undo a choice made for a reason they cannot see.
+- Scoped work with an unambiguous definition of done.
+
+**What they do**
+
+Read the ledger and blueprint. Work through build units. Rarely accept decisions — usually a
+Viewer.
+
+**Design implications**
+
+- Build units must carry the applicable decisions inline, not by reference alone.
+- Traceability must run downward as well as upward: from a module to the decisions that shaped
+  it — PS-8 in [Product standards](/constitution/product-standards).
+- Viewer must be genuinely useful, not a degraded experience.
+
+---
+
+## Platform administrator
+
+**Situation.** Responsible for DevOS itself inside an organisation. Manages who has access
+and maintains the framework library.
+
+**Needs**
+
+- Clear role semantics with predictable blast radius.
+- An audit trail of who did what.
+- Framework authoring that enforces the framework standard rather than trusting authors.
+
+**What they do**
+
+Work primarily in the admin workspace. Review the audit log. Adapt frameworks to house
+constraints.
+
+**Design implications**
+
+- Administration must be separated from project work, so neither is one misclick from the
+  other.
+- Framework authoring must enforce Article 6 — a framework without named failure modes cannot
+  be published.
+- Role changes must be immediate and audited.
+
+---
+
+## Auditor or reviewer
+
+**Situation.** Verifying that a design process happened properly — internal review, due
+diligence, or regulatory examination.
+
+**Needs**
+
+- Evidence that decisions were made deliberately, by identified people, on stated evidence.
+- Complete supersession chains, including reversed decisions.
+- Read access that cannot alter anything.
+
+**What they do**
+
+Read ledgers and audit logs. Trace decisions to briefs and blueprints to decisions. Change
+nothing.
+
+**Design implications**
+
+- Superseded records must remain retrievable with their original content intact.
+- Read-only must be enforced structurally, not by interface omission.
+- Time-bounded external access is an open question — see
+  [Roles and workspaces](/getting-started/roles-and-workspaces).
+
+---
+
+## Who DevOS is not for
+
+Stating this prevents design drift toward users the product cannot serve well.
+
+| Not a persona | Why |
+| --- | --- |
+| A non-technical user expecting DevOS to make the choices | Every decision requires human acceptance. Someone must exercise judgement. |
+| A team wanting code generated end to end | DevOS produces specifications and prompts, not applications. |
+| A project manager tracking delivery | DevOS produces build units; it is not a tracker. |
+| A large enterprise needing self-hosted or air-gapped operation | Deferred — see [Roadmap](/introduction/roadmap). |
+| Someone with a finished specification wanting validation | The interview tests assumptions; it does not ratify them. |
+
+## Persona conflicts
+
+Where two personas want opposite things, these resolutions apply:
+
+| Conflict | Resolution |
+| --- | --- |
+| Founder wants a single clear answer; PS-4 requires plural recommendations | Plural recommendations, ranked by scored evidence only. Clarity comes from the evidence, not from suppressing options. |
+| Consultant wants blueprint export; administrator wants data control | Export is permitted within the organisation boundary and audited. Cross-organisation export is not a permission that exists. |
+| Implementing engineer wants terse build units; auditor wants full context | Build units carry applicable decisions inline; full context remains one link away. |
+| Lead wants to correct a wrong decision; auditor needs history intact | Supersession. The record is never edited. |
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-07-29 | Initial page. |

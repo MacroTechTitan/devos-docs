@@ -177,6 +177,7 @@
       {
         "group": "Reference",
         "pages": [
+          "reference/project-state",
           "reference/glossary",
           "reference/status-definitions",
           "reference/decision-record-template",

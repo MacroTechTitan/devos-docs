@@ -1,0 +1,205 @@
+---
+title: "Artefact Ownership"
+description: "Which layer owns each engineering artefact: DevOS, AI Connect, MTTBuild, the project repository, or the DevOS UI."
+---
+
+<Info>
+**Status: Planned.** This page states the ownership boundaries the DevOS Library depends on. The boundaries are a public convention now and become enforceable when the DevOS application and its API exist. It does not change the canonical seven Core Engines.
+</Info>
+
+## Purpose
+
+Every reusable engineering asset DevOS handles passes through several layers: it
+is specified somewhere, stored somewhere, rendered somewhere, and executed
+somewhere. Those are four different questions, and answering them with one word
+is how a system ends up with the same fact recorded in three places that
+disagree.
+
+This page assigns exactly one canonical owner to each class of artefact. It is
+the rule the rest of the [DevOS Library](/library/overview) is built on.
+
+## The single-owner rule
+
+> An artefact has **one** canonical owner. Every other layer holds a copy, a
+> rendering, a cache, or an execution of it — never a second original.
+
+A layer that is not the owner MUST NOT be the place a change originates. If a
+correction has to be made, it is made in the owning layer and flows outward.
+Where a non-owning layer needs to diverge, that divergence is an explicit,
+recorded override — see [Project overrides](#project-overrides) — not a quiet
+edit.
+
+The rule matters because the alternative is unfalsifiable. When two layers both
+hold "the" architecture, a disagreement between them has no correct resolution:
+there is no fact that decides which one is wrong.
+
+## The five layers
+
+| Layer | What it is | Canonically owns |
+| --- | --- | --- |
+| **DevOS** | The engineering operating system and its specifications | Frameworks, Feature Registry, requirements, architecture, decisions, blueprints, processes, standards, templates, the skills catalogue, and project state |
+| **AI Connect** | The execution and orchestration layer | Execution sessions, agent routing, worker adapters, event capture, attribution, cost, and delivery of DevOS context to agents |
+| **MTTBuild** | A build-workflow skill | Build discipline: preflight, sprint boundaries, migration safety, validation sequencing, review, deployment, rollback |
+| **Project repository** | One product's own codebase | Source, tests, configuration, local feature records, project-specific documentation, and declared overrides |
+| **DevOS UI** | The human interaction surface | Presentation, selection, navigation, and the capture of human decisions as input to the layers above |
+
+Two of these are frequently misassigned, and both mistakes are worth naming.
+
+**AI Connect is not a second specification store.** It receives Feature Work
+Packets, prompt context, and skills; it does not become the authority on what a
+feature is or how a system should be built. It is the layer that *does* the
+work and records what happened while doing it.
+
+**The DevOS UI owns no engineering knowledge.** It is where a human sees and
+acts on artefacts. A skill that exists only because someone typed it into a form
+is a skill with no reviewable history, which is the failure mode
+[Git as canonical source](#git-as-canonical-source) exists to prevent.
+
+## MTTBuild is a skill, not the architecture
+
+MTTBuild is the Macro Tech Titan standard build workflow. It is a
+[skill](/library/skills) — reusable procedural knowledge about *how to execute
+work well* — and it sits inside the Library like any other.
+
+This is the boundary that is easiest to blur, because MTTBuild is opinionated
+enough to look like architecture:
+
+| MTTBuild owns | DevOS owns |
+| --- | --- |
+| That a migration is generated, committed, reviewed, and applied as separate steps | What the schema is, and which decision produced it |
+| That a sprint runs preflight before writing code | Which requirements the sprint satisfies |
+| That validation gates a release | What the release contains and whether its feature gates pass |
+| That a broken deploy is reverted rather than fixed forward | What the deployed system is supposed to do |
+
+MTTBuild directs execution against DevOS definitions. It never becomes the
+definition. A build workflow that also decides what to build has absorbed the
+[Decision Ledger](/engines/decision-ledger)'s job, and the record of *why* a
+system looks the way it does disappears into a procedure.
+
+The practical test: if the answer changes when you switch build workflows, it
+belongs to MTTBuild. If it does not, it belongs to DevOS.
+
+## Ownership by artefact
+
+| Artefact | Canonical owner | Held elsewhere as |
+| --- | --- | --- |
+| Framework specification | DevOS | Rendered in UI; delivered to agents as context |
+| Feature record | DevOS | Consumed by AI Connect as a Work Packet |
+| Requirement | DevOS | Referenced by blueprints, tasks, and tests |
+| Architecture document | DevOS | Rendered in UI; referenced by skills |
+| Decision record | DevOS | Immutable; referenced, never rewritten |
+| Blueprint | DevOS | Compiled into build units |
+| Process definition | DevOS | Executed through AI Connect |
+| Skill | DevOS (catalogue) | Loaded by AI Connect; applied by an agent |
+| Template | DevOS | Instantiated into a project repository |
+| Standard / checklist / policy | DevOS | Enforced during validation and review |
+| Agent definition | DevOS | Routed and invoked by AI Connect |
+| Execution session | AI Connect | Summarised in the UI timeline |
+| Agent run event | AI Connect | Displayed; exported to DevOS on completion |
+| Cost and attribution | AI Connect | Aggregated for reporting |
+| Worker adapter | AI Connect | Not exposed as a DevOS artefact |
+| Build discipline | MTTBuild | Applied to every run |
+| Source code | Project repository | Referenced by build units and commits |
+| Tests | Project repository | Results reported as validation evidence |
+| Project configuration | Project repository | Never promoted to the Library unchanged |
+| Local override | Project repository | Declared explicitly against a Library asset |
+| Human approval | DevOS | Captured through the UI, recorded against a run |
+
+Live operational state is the one place the direction reverses. Build Runs,
+approvals, costs, and execution events originate in the application and its data
+store; Git receives exported artefacts where a durable record is warranted. A
+running process is not a document, and pretending otherwise produces either a
+very noisy repository or a very stale one.
+
+## Git as canonical source
+
+For reusable, versioned engineering knowledge, **Git is the source of truth and
+the DevOS UI is the interaction surface.**
+
+```text
+Git repository            ← authored, reviewed, versioned, forkable
+  ↓
+DevOS Library asset       ← identified, classified, validated
+  ↓
+DevOS UI                  ← browsed, selected, installed, executed
+```
+
+This ordering is deliberate and it is not merely a storage preference. It buys
+four properties that an application-database-first model cannot provide:
+
+- **History.** Every change to a skill, process, or template has an author, a
+  date, a diff, and a review. "When did this stop being right?" is answerable.
+- **Review.** Changes arrive as pull requests, so a reusable asset is subject to
+  the same scrutiny as code.
+- **Forkability.** An organisation can take the Library, adapt it, and keep
+  receiving upstream improvements. Nothing is trapped behind a login.
+- **Inspectability.** A developer evaluating DevOS can read exactly what an
+  agent will be told to do, before running anything.
+
+The UI must therefore expose the *same* assets rather than create a parallel set.
+A "create skill" button that writes only to the application database has quietly
+made Git non-canonical, and the four properties above are gone.
+
+<Note>
+The corollary is a constraint on the application, not a nicety: any UI action
+that authors or edits a reusable asset MUST produce a Git change. It may do so
+through a branch, a pull request, or a commit on the user's behalf — but the
+repository, not the database, holds the result.
+</Note>
+
+## Project overrides
+
+A project may diverge from a Library asset. That is expected: the Library
+carries general knowledge, and projects are specific.
+
+What is not acceptable is silent divergence. An override MUST:
+
+1. **Name what it overrides** — the asset and the version it was derived from.
+2. **State why** — the project-specific condition that made the general asset
+   wrong here.
+3. **Live in the project repository** — not as an edit to the Library asset.
+
+Overrides are also the Library's main source of improvement. An override that
+turns out to be generally correct is a candidate for promotion:
+
+```text
+Project override
+  → observed to apply beyond one project
+  → proposed as a Library change
+  → reviewed under governance
+  → published as a new asset version
+```
+
+Promotion is a governed change, not a copy-paste. See
+[Reusable assets](/library/asset-standard) for what an asset must satisfy before
+it can be published.
+
+## What this boundary buys
+
+Keeping these layers distinct is what allows DevOS to treat execution agents as
+**replaceable**. If the knowledge of how a system should be built lives in DevOS
+rather than inside one coding agent's configuration, then changing agents costs
+an adapter rather than a rewrite.
+
+It is also what keeps the record of a system's design intact. Requirements,
+decisions, and architecture survive in the layer that owns them, independent of
+whichever worker happened to execute the change.
+
+## Open questions
+
+- Should an organisation be able to declare a *different* canonical owner for a
+  given artefact class — for example, owning its own agent definitions outside
+  the DevOS catalogue?
+- When a UI-authored asset produces a Git change, does it commit directly or
+  always open a pull request? The answer likely differs for DevOS reference
+  assets and organisation-private ones.
+- Where do execution events become durable? They originate in AI Connect, but a
+  completed run's timeline is arguably a DevOS record once approved.
+- Should overrides expire, or be re-validated against a newer asset version on a
+  schedule, so that a project's divergence does not silently become permanent?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 0.1 | 2026-08-21 | Initial page. States the single-owner rule, the five layers, the MTTBuild boundary, and the Git-canonical model. |

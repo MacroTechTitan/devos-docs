@@ -27,9 +27,9 @@ This boundary prevents reusable knowledge, runtime execution logic, and project-
 | **AI Connect** | Execution sessions, agent routing, worker adapters, event capture, tool execution, attribution, cost, and delivery of DevOS context/assets to execution agents. |
 | **Build skills** | Reusable procedural instructions for how an agent should plan, implement, validate, review, migrate, release, and recover work. |
 | **Project repositories** | Project-specific source code, tests, configuration, local feature records, overrides, and implementation documentation. |
-| **DevOS UI** | Human-facing views and controls over DevOS artifacts, Build Control, features, approvals, library assets, and operations. |
+| **DevOS UI** | Human-facing views and controls over DevOS artefacts, Build Control, features, approvals, library assets, and operations. |
 
-An artifact SHOULD have one canonical owner even when it is rendered, cached, referenced, or executed in another layer.
+An artefact SHOULD have one canonical owner even when it is rendered, cached, referenced, or executed in another layer.
 
 ## Library asset classes
 
@@ -61,7 +61,7 @@ Conceptually:
 ```text
 Git repository
   ↓
-DevOS Library artifact
+DevOS Library artefact
   ↓
 DevOS UI
   ↓
@@ -79,11 +79,11 @@ GitHub user → inspect / copy / fork / contribute
 DevOS app user → select / install / add to project / execute
 ```
 
-For reusable DevOS knowledge, Git is the source and the UI is the interaction layer. For live operational state such as Build Runs, approvals, costs, and execution events, the application data store may be authoritative and Git may receive exported artifacts where appropriate.
+For reusable DevOS knowledge, Git is the source and the UI is the interaction layer. For live operational state such as Build Runs, approvals, costs, and execution events, the application data store may be authoritative and Git may receive exported artefacts where appropriate.
 
 ## Skills
 
-Skills are reusable execution knowledge owned and cataloged by DevOS. AI Connect loads or delivers the applicable skills to execution agents.
+Skills are reusable execution knowledge owned and catalogued by DevOS. AI Connect loads or delivers the applicable skills to execution agents.
 
 Examples may include:
 
@@ -135,7 +135,7 @@ DevOS UI → Architecture → Application Architecture
 Ask AI / Create Decision / Create Build Task / View Dependencies / View History
 ```
 
-Important system knowledge should not exist only as opaque application state when a versioned public artifact is appropriate.
+Important system knowledge should not exist only as opaque application state when a versioned public artefact is appropriate.
 
 ## Feature Registry boundary
 

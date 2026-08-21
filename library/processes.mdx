@@ -1,0 +1,193 @@
+---
+title: "Processes"
+description: "Reusable operational sequences: the stages a class of work moves through, and the gates between them."
+---
+
+<Info>
+**Status: Planned.** The process model is specified here. No process definitions are published in this repository yet, and no execution surface exists to run one. The DevOS workflow described in [Core Engines](/engines/overview) is the one sequence currently specified end to end.
+</Info>
+
+## Purpose
+
+A **process** is a reusable operational sequence: the ordered stages a class of
+work moves through, and the conditions that must hold before it can move on.
+
+Processes answer *what happens, in what order, and what must be true to
+proceed.* They are the layer that makes work repeatable across projects, and
+they are where an organisation's non-negotiables live — the checks that are not
+optional because someone is in a hurry.
+
+## Processes and skills
+
+A process and a [skill](/library/skills) describe different things, and keeping
+them separate is what lets each change independently.
+
+| | Process | Skill |
+| --- | --- | --- |
+| Answers | What happens, in what order | How this work is done well |
+| Unit | Stage and gate | Procedure |
+| Changes when | The sequence or its gates change | The technique improves |
+| Example | "Security review precedes release" | "How to conduct a security review" |
+
+Adding a gate to a process changes no skill. Improving a skill changes no
+process. When the two are merged into one document, every technique improvement
+becomes a change to the organisation's release policy, which is why such
+documents stop being updated.
+
+## Anatomy of a process
+
+| Element | Purpose |
+| --- | --- |
+| **Identity** | Name, stable identifier, and version |
+| **Trigger** | What starts it |
+| **Stages** | The ordered steps, each with an owner and an output |
+| **Gates** | The condition that must hold to leave a stage |
+| **Evidence** | What each gate accepts as proof |
+| **Roles** | Who or what performs each stage — human, agent, or system |
+| **Exit** | The terminal outcomes, including unsuccessful ones |
+| **Failure handling** | What happens when a gate fails |
+
+### Gates
+
+A gate is the part that carries the weight. A process without gates is a
+suggestion.
+
+Every gate declares:
+
+- **What must be true** — stated so it can be checked, not interpreted.
+- **What counts as evidence** — a command and its exit status, a recorded human
+  decision, a validation report. Not an assertion by the party being gated.
+- **Who may satisfy it** — some gates are satisfiable by an agent; some require
+  a human by construction.
+- **What happens on failure** — return to a prior stage, stop, or escalate.
+  "Proceed with a warning" is a gate that does not exist.
+
+<Note>
+A gate that the executing worker can satisfy by asserting its own success is not
+a gate. This is the same rule the
+[Feature Completion Contract](/product/feature-registry#feature-completion-contract)
+applies to feature release, and the reason
+[Agentic Build Control](/product/agentic-build-control) runs review independently
+of the worker that did the work.
+</Note>
+
+### Human-only gates
+
+Some gates cannot be delegated to an agent regardless of capability. In DevOS
+these are constitutional rather than configurable — human acceptance of a
+decision is the design conviction the whole workflow rests on, per Article 4 in
+[Principles](/constitution/principles).
+
+A process MAY add human-only gates. It MUST NOT remove one that DevOS defines.
+
+## Candidate processes
+
+The processes DevOS expects to define. **None is written yet** — this is the
+intended scope, not an index.
+
+| Process | Covers |
+| --- | --- |
+| New Product | Idea through first accepted architecture decision |
+| Agentic Build | A supervised build run from task definition to approved outcome |
+| Feature Development | A feature from registration to release eligibility |
+| Architecture Review | Assessing a design against recorded decisions and constraints |
+| Security Review | Reviewing a change for authorisation, exposure, and secrets |
+| Database Migration | Generating through verifying a schema change |
+| Release | Promoting validated work to production |
+| Incident Response | Detection through recorded resolution |
+| Documentation | Producing and reviewing documentation changes |
+
+The DevOS workflow itself — idea through build pipeline — is already specified
+as an engine chain in [Core Engines](/engines/overview) and as a user-facing
+sequence in [Product workflow](/getting-started/product-workflow). Expressing it
+additionally as a process definition is a representation question, not a new
+specification, and is open below.
+
+## Framework extension
+
+A [Framework](/frameworks/overview) may extend a process with additional gates.
+This is how regulatory and domain obligations reach execution without forking
+the process for every domain.
+
+A [Fintech](/frameworks/fintech) project, for example, may require compliance,
+audit, permission, and record-retention checks in addition to the baseline
+release gates. A [Healthcare](/frameworks/healthcare) project may require checks
+the baseline has no reason to include.
+
+The extension rules follow the composition model the Framework Library already
+defines:
+
+- A Framework **adds** gates. It does not remove or weaken baseline gates.
+- Added gates are attributed to the Framework that contributed them, so a run
+  shows which obligation came from where.
+- Where a contributed gate contradicts the baseline, the Framework **names the
+  conflict** rather than resolving it silently — the same rule that governs
+  constraint frameworks composing onto shape frameworks.
+
+```text
+Baseline process
+  + Framework-contributed gates
+  + project overrides (explicit)
+  = the process this run actually followed
+```
+
+The composed result is recorded on the run. A process that cannot be
+reconstructed after the fact cannot be audited, and an unauditable gate provides
+assurance without evidence.
+
+## Execution
+
+A process is authored in Git, selected in the DevOS UI, and executed through AI
+Connect. Which layer owns it does not change across those three:
+
+```text
+DevOS Library
+  process definition (versioned, in Git)
+       ↓
+DevOS UI
+  selected for a project or a run
+       ↓
+AI Connect
+  stages dispatched; gate evidence captured as events
+       ↓
+Build Run
+  the composed process and its gate outcomes, recorded
+```
+
+As with skills, the **version** of the process a run followed is recorded on
+that run. Tightening a gate next quarter does not retroactively change what last
+quarter's run was required to satisfy, and does not make its record wrong.
+
+## Relationship to Build Control
+
+[Agentic Build Control](/product/agentic-build-control) is where a process
+becomes visible to an operator. The run lifecycle it supervises — queued,
+running, paused, reviewing, awaiting approval, completed — is the execution of a
+process instance, with the review and approval gates surfaced as the points a
+human acts.
+
+Build Control is the supervision surface; the process is what is being
+supervised. Neither is a Core Engine, and the canonical engine count remains
+seven.
+
+## Open questions
+
+- Should the DevOS engine chain be expressed as a process definition, or does
+  that duplicate [Core Engines](/engines/overview) and create a second source of
+  truth for the same sequence?
+- Can a process be composed from sub-processes, or does nesting make the
+  effective gate set too hard to reconstruct?
+- When a Framework-contributed gate conflicts with a baseline gate, who resolves
+  it — the operator at run time, or an architecture decision recorded ahead of
+  time?
+- Should a process version be pinned per project, or resolved at run start?
+  Pinning is more predictable; resolving at start distributes improvements
+  faster.
+- Do processes need a dry-run mode that reports which gates *would* fail without
+  executing any stage?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 0.1 | 2026-08-21 | Initial page. Defines the process model, gates and evidence, Framework extension, and execution through AI Connect. |

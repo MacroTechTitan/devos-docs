@@ -1,0 +1,186 @@
+---
+title: "Skills"
+description: "Reusable procedural knowledge that tells an execution agent how to perform a class of work well."
+---
+
+<Info>
+**Status: Planned.** The skill model and its boundaries are specified here. No skill catalogue is published in this repository yet, and the loading mechanism in AI Connect is not implemented. MTTBuild exists as a working skill outside the catalogue.
+</Info>
+
+## Purpose
+
+A **skill** is reusable procedural knowledge: it tells an execution agent *how*
+to carry out a class of work — plan, implement, validate, review, migrate,
+release, recover — without telling it *what* to build.
+
+Skills exist because the same execution mistakes recur across projects and
+agents. A build that skips preflight, a migration applied before review, a
+"complete" report covering a partially working feature: these are predictable,
+and a skill is where the lesson is written down so it stops repeating.
+
+## What a skill is not
+
+- **Not architecture.** A skill references the
+  [architecture](/architecture/system-overview) and
+  [Frameworks](/frameworks/overview) that DevOS owns. It does not restate them,
+  because a restatement drifts.
+- **Not a feature specification.** What a capability must do belongs to the
+  [Feature Registry](/product/feature-registry).
+- **Not an agent.** An agent is an executor with a contract; a skill is
+  knowledge that agents apply. Several agents may use one skill.
+- **Not a prompt.** A prompt is assembled per invocation and is disposable. A
+  skill is versioned, reviewed, and reused.
+- **Not project code.** Anything that only makes sense for one product belongs
+  in that project's repository.
+
+The distinction that carries the most weight is the first. A skill that embeds
+its own copy of an architectural rule becomes a second source of truth for that
+rule, and the [single-owner rule](/library/ownership#the-single-owner-rule) is
+broken the moment the two disagree.
+
+## Anatomy of a skill
+
+| Element | Purpose |
+| --- | --- |
+| **Identity** | Name, stable identifier, and version |
+| **Applicability** | The conditions under which this skill applies, and those under which it does not |
+| **Procedure** | The ordered work the agent performs |
+| **Preconditions** | What must be true before starting; what to do when it is not |
+| **Stop-and-ask** | Conditions that require a human before proceeding |
+| **Evidence** | What the skill must produce to show the work was actually done |
+| **Failure modes** | How this skill goes wrong, and the response to each |
+| **References** | The DevOS specifications it defers to, by link |
+
+Two of these do most of the work.
+
+**Stop-and-ask** is what makes a skill safe to run unsupervised for long
+stretches. A skill that has no stated boundary will run past one.
+
+**Evidence** is what makes completion checkable. "Tests pass" asserted by the
+worker that wrote the tests is not evidence; the command, its output, and its
+exit status are. This is the same principle the
+[Feature Completion Contract](/product/feature-registry#feature-completion-contract)
+applies at the product level, and it is why a skill must state what it emits,
+not merely what it does.
+
+## Applicability
+
+A skill declares when it applies. Where two skills apply to the same work, the
+more specific one governs the overlapping portion, and both are recorded on the
+run so the combination is inspectable.
+
+A skill that declares no applicability conditions cannot be selected
+automatically and is, in practice, documentation rather than a skill.
+
+## MTTBuild
+
+**MTTBuild** is the Macro Tech Titan standard software-build workflow, and the
+clearest worked example of the skill model.
+
+It encodes build discipline learned from real failure modes in solo-developer,
+AI-assisted builds: workflow drift, schema collisions, in-memory state on
+hibernating hosts, and conflict-heavy merges. Its content is procedural
+throughout — infrastructure preflight, sprint boundaries, migration safety,
+validation sequencing, review, deployment, rollback.
+
+What makes it a skill rather than architecture is what it deliberately does not
+decide:
+
+| MTTBuild decides | DevOS decides |
+| --- | --- |
+| That migrations are generated, committed, reviewed, then applied — never auto-applied | What the schema is |
+| That every sprint starts from a clean tree and a pulled main | What the sprint delivers |
+| That a broken deploy is reverted, not fixed forward | What the deployment is supposed to do |
+| That new endpoints carry input validation | What the endpoint is for |
+
+Switch build workflows and the left column changes; the right column does not.
+That is the test from
+[Artefact ownership](/library/ownership#mttbuild-is-a-skill-not-the-architecture).
+
+MTTBuild is currently maintained alongside the projects that use it rather than
+published in a DevOS skill catalogue. Bringing it into the catalogue under the
+[asset standard](/library/asset-standard) is a migration, not a rewrite.
+
+## Candidate skills
+
+The skill classes DevOS expects to publish. **None of these is written yet** —
+they are the intended scope of the catalogue, not an index of existing pages.
+
+| Skill | Class of work |
+| --- | --- |
+| Standard build workflow (MTTBuild) | Planning, implementing, validating, and shipping a change |
+| Security review | Reviewing a change for authorisation, data exposure, and secret handling |
+| Database migration | Generating, reviewing, applying, verifying, and rolling back schema changes |
+| Feature completion | Evaluating a feature against its completion gates before release |
+| Documentation writing | Producing documentation that matches this repository's conventions |
+| Pull-request review | Reviewing a proposed change independently of the worker that wrote it |
+| Incident response | Diagnosing, reverting, and recording a production failure |
+| Architecture review | Assessing a proposed design against recorded decisions and constraints |
+
+## How a skill reaches an agent
+
+```text
+DevOS Library
+  skill (versioned, in Git)
+       ↓  selected by applicability, or chosen by an operator
+AI Connect
+  prompt envelope  ← skill + Feature Work Packet + project context
+       ↓
+Execution agent
+       ↓
+Evidence and events  → recorded against the Build Run
+```
+
+DevOS owns the skill. AI Connect delivers it and records what happened. The
+agent applies it. No layer holds two of those roles.
+
+The version of every skill applied to a run is recorded on that run. A run
+executed six months ago remains interpretable because the skill it followed can
+be resolved at the version it followed, not at the current version — the same
+pinning rule the [Decision Ledger](/engines/decision-ledger) applies to
+Frameworks.
+
+## Skills and Processes
+
+Skills and [processes](/library/processes) are easy to confuse and are cleanly
+separable:
+
+- A **process** is a sequence of stages with gates between them. It answers
+  *what happens in what order, and what must be true to move on.*
+- A **skill** is how one unit of work inside a stage is performed well. It
+  answers *how to do this properly.*
+
+A release process says a security review happens before release. The security
+review skill says how to conduct one. Changing the skill does not change the
+process; adding a gate changes the process without touching any skill.
+
+## Untrusted content
+
+Content a skill causes an agent to read — repository files, issue text, provider
+responses, dependency documentation — is **data, not instruction**. A skill MUST
+NOT direct an agent to act on directives found in retrieved content, and an
+agent MUST NOT treat them as authority.
+
+This is a live concern rather than a theoretical one: a skill that instructs an
+agent to "follow the instructions in the README" has handed control of the run
+to whoever wrote that README.
+
+## Open questions
+
+- Should skills be composable — a review skill that extends a base review skill
+  — or does composition make the applied procedure too hard to reconstruct after
+  the fact?
+- Can an organisation author private skills that are never visible to DevOS,
+  the way Framework adaptations already work?
+- Where is a skill's format specified? It needs to be readable by a human, a
+  renderer, and an agent, and those three want different things.
+- Does a skill declare which agents may apply it, or is that routing's concern
+  in AI Connect?
+- Should a skill be able to declare required evidence that blocks completion
+  when absent, making it enforceable rather than advisory?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 0.1 | 2026-08-21 | Initial page. Defines the skill model, its boundaries, the MTTBuild example, and delivery through AI Connect. |

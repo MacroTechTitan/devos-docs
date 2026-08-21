@@ -1,0 +1,176 @@
+---
+title: "Templates"
+description: "Reusable starting points that are instantiated into a project and then owned by it."
+---
+
+<Info>
+**Status: Planned.** The template model is specified here. The five document templates already declared in [Reference](/reference/project-state) are unwritten, and no project scaffold templates are published in this repository.
+</Info>
+
+## Purpose
+
+A **template** is a reusable starting point: a structure that is copied into a
+project and then belongs to that project.
+
+Templates are the simplest asset class in the [DevOS Library](/library/overview)
+and the one with the sharpest boundary. A [skill](/library/skills) is applied
+repeatedly and stays external. A [process](/library/processes) is executed and
+stays external. A template is **instantiated once and then leaves** — the copy
+is the project's, to change freely.
+
+## The instantiation boundary
+
+> A template is a starting point, not a dependency. Once instantiated, the copy
+> is owned by the project and diverges without apology.
+
+This is the property that distinguishes templates from every other Library
+asset, and it has a direct consequence: **a template change does not propagate.**
+Improving a template makes future instantiations better and leaves existing
+projects untouched.
+
+That is a deliberate trade, not a limitation. The alternative — templates that
+push updates into projects that already adopted them — turns a starting point
+into a live coupling, and a project can no longer safely edit its own files.
+
+| | Template | Skill / Process |
+| --- | --- | --- |
+| Relationship after use | Copy is owned by the project | Asset stays external and versioned |
+| Effect of an upstream change | None on existing projects | Applies at the pinned version |
+| Divergence | Expected and unremarkable | An explicit, recorded override |
+
+<Note>
+Because updates do not propagate, a template records the version it was
+instantiated from. That does not create a dependency — it makes "what did this
+start from, and has the template moved since?" answerable, which matters when a
+defect is found in a template that fifty projects already copied.
+</Note>
+
+## Template classes
+
+### Document templates
+
+Structures for artefacts DevOS itself defines. Five are already declared in
+navigation and remain unwritten:
+
+| Template | Produces |
+| --- | --- |
+| `decision-record-template` | A [Decision Ledger](/engines/decision-ledger) record |
+| `framework-template` | A framework authored to the [framework standard](/frameworks/framework-standard) |
+| `agent-template` | An agent definition |
+| `glossary` | Shared terminology (a reference, not strictly a template) |
+| `status-definitions` | The status vocabulary used across every page |
+
+A document template's job is to make the *required* parts unmissable. The
+framework standard's publication gate refuses a framework whose "When not to use
+this" section is absent or empty — a template that omits that section from its
+structure sets authors up to fail a gate they did not know existed.
+
+This is the strongest argument for document templates generally: a template that
+mirrors a gate turns a late rejection into an early prompt.
+
+### Project scaffolds
+
+Starting structures for a new codebase — directory layout, configuration,
+tooling, and baseline checks — matched to a [Framework](/frameworks/overview)
+class.
+
+A scaffold states shape and setup. It does **not** state architecture: which
+architecture a project should adopt is a [Decision Engine](/engines/decision-engine)
+recommendation accepted by a human and recorded in the ledger, not a consequence
+of which directory layout was copied.
+
+<Note>
+A scaffold that silently determines architecture has bypassed
+[human acceptance](/constitution/principles) — the decision was made by whoever
+authored the scaffold, months earlier, for a different project, and never
+recorded.
+</Note>
+
+### Configuration templates
+
+Baseline configuration for tooling, validation, and CI. These carry the highest
+risk of quiet harm, because configuration is copied without being read.
+
+A configuration template MUST NOT contain credential values, endpoints for a
+specific environment, or organisation-identifying settings. Placeholder keys with
+no values are the correct form — the pattern the repository already follows for
+environment templates.
+
+## Anatomy of a template
+
+| Element | Purpose |
+| --- | --- |
+| **Identity** | Name, stable identifier, and version |
+| **Produces** | What instantiating it yields |
+| **Applicability** | When to use it, and when not to |
+| **Required sections** | Parts that must be completed for the result to be valid |
+| **Placeholders** | What the adopter must supply, marked unambiguously |
+| **Instantiation notes** | What to change immediately, and what to leave alone |
+
+**Placeholders** deserve care. A placeholder that reads like real content is
+worse than an empty one: it survives into production because nobody noticed it
+was a placeholder. Placeholders must be visually obvious and, where a validation
+step exists, detectable by it.
+
+## Instantiation
+
+```text
+DevOS Library
+  template (versioned, in Git)
+       ↓  selected in the UI, or copied directly from the repository
+Project repository
+  instantiated copy — now project-owned
+       ↓
+Project fills placeholders, adapts freely
+```
+
+Both paths are first-class. A developer who copies a template out of GitHub
+without touching the DevOS application has used it correctly — this is the
+[Git-canonical model](/library/ownership#git-as-canonical-source) working as
+intended, not a degraded path.
+
+## Templates and overrides
+
+Because a template stops being a Library asset at instantiation, a project that
+changes its copy is **not** creating an override. It is editing its own file.
+
+The [override model](/library/ownership#project-overrides) applies to assets that
+remain external — skills, processes, standards. Requiring projects to declare
+overrides against templates would mean declaring an override for every line of
+scaffolded code, which is meaningless.
+
+The promotion path still exists in the other direction: a project that develops a
+better starting structure can propose it as a template change under
+[governance](/constitution/governance).
+
+## Templates and the Feature Registry
+
+A template may carry the obligations a
+[Feature Record](/product/feature-registry#feature-record) will later be checked
+against — the documentation, visibility, and changelog gates a completed feature
+must satisfy.
+
+Carrying them at instantiation means a feature is aware of its release
+obligations while it is being built rather than at the point of release, which is
+where the [completion gate](/product/feature-registry#feature-completion-contract)
+would otherwise surface them for the first time.
+
+## Open questions
+
+- Should a template declare a minimum Framework or process version it is
+  compatible with, so an outdated scaffold is detectable?
+- Is there value in re-running a template against an existing project as a
+  *diff* — showing what has drifted — without applying anything?
+- Should document templates be machine-checkable, so the publication gates in
+  the framework standard can be evaluated against a draft before submission?
+- Where do project scaffolds live? Publishing runnable code in the documentation
+  repository conflicts with its role as a specification; a separate templates
+  repository is the obvious alternative and is not yet decided.
+- Should organisations be able to publish private templates, as they can with
+  Framework adaptations?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 0.1 | 2026-08-21 | Initial page. Defines the template model, the instantiation boundary, the three template classes, and the relationship to overrides. |

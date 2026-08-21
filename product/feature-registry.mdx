@@ -1,0 +1,310 @@
+---
+title: "Feature Registry"
+description: "Canonical feature lifecycle, product-completion, visibility, documentation, entitlement, validation, and release-control specification."
+---
+
+<Info>
+**Status: Planned.** The Feature Registry is a DevOS product/platform capability. It does **not** change the canonical seven Core Engines. Any future proposal to promote it into the engine taxonomy requires an explicit architecture/governance decision.
+</Info>
+
+## Purpose
+
+The Feature Registry is the canonical system of record for every customer-facing capability in a software project.
+
+Its purpose is to solve a common agentic-development failure:
+
+> **A feature can exist in code without actually existing as a complete product.**
+
+AI agents can implement backend logic while omitting navigation, documentation, pricing, permissions, tests, onboarding, changelogs, platform behavior, or marketing surfaces. The Feature Registry makes those omissions machine-detectable.
+
+A feature is not complete merely because its code exists. DevOS defines feature completion as:
+
+**Define → Build → Expose → Test → Document → Announce → Validate → Release**
+
+A feature is the atomic unit of product capability in DevOS. Code is an implementation of a feature; it is not evidence that the feature is complete. A feature becomes releasable only when its required implementation, interface, validation, documentation, entitlement, security, and release obligations have been satisfied.
+
+## Placement
+
+Feature Registry is a substantial DevOS subsystem/product capability positioned between product definition and implementation/release control. It may be referenced by Blueprints, Frameworks, validation, AI Connect, documentation, and release workflows without becoming an eighth Core Engine.
+
+Conceptually:
+
+```text
+Requirements
+→ Architecture / Decisions
+→ Blueprint
+→ Feature Record
+→ Implementation
+→ Validation
+→ Release
+→ Maintenance
+```
+
+The Feature Record answers: **What capabilities does this product actually have right now, and what remains required before each capability is releasable?**
+
+## Feature record
+
+Every feature receives a permanent immutable Feature ID and mutable descriptive metadata.
+
+A Feature Record SHOULD be able to represent:
+
+- ID, name, description, product, product area, type, and owner;
+- lifecycle status;
+- requirements and architecture decisions;
+- implementation locations;
+- dependencies and affected capabilities;
+- UI location and discoverability;
+- documentation obligations;
+- marketing/catalog/pricing visibility;
+- entitlements and permissions;
+- platform availability;
+- required tests;
+- security/compliance review;
+- release and changelog obligations.
+
+The exact storage schema is implementation-defined until the canonical data-model specification is completed.
+
+## Lifecycle
+
+Feature lifecycle states are:
+
+- `PROPOSED`
+- `APPROVED`
+- `PLANNED`
+- `IN_DEVELOPMENT`
+- `IMPLEMENTED`
+- `BETA`
+- `AVAILABLE`
+- `DEPRECATED`
+- `RETIRED`
+
+`IMPLEMENTED` and `AVAILABLE` are intentionally distinct. Implementation means code exists. Availability means all required release gates have passed.
+
+## Feature Completion Contract
+
+A customer-facing feature cannot reach `AVAILABLE` until its applicable gates pass.
+
+Default gates are:
+
+| Gate | Requirement |
+| --- | --- |
+| Implementation | Required |
+| UI discoverability | Required for UI features |
+| Functional validation | Required |
+| Guide documentation | Required for customer-facing features |
+| Feature catalog | Required for public customer features |
+| Entitlement validation | Required when access varies by plan/role |
+| Security review | Required where applicable |
+| Platform validation | Required for claimed platforms |
+| Changelog | Required when release policy requires it |
+| Production acceptance | Required |
+
+Frameworks MAY extend this contract. For example, Fintech can require compliance, audit, record-retention, and permission gates; AI Agent can require model/tool access, agent permissions, human approval, auditability, and cost controls.
+
+## Visibility Contract
+
+**Implemented features must be discoverable.**
+
+For every customer-facing implemented feature, DevOS should know where the user can find it: navigation, settings, context menu, dashboard, API, or admin surface.
+
+An `AVAILABLE` UI feature marked non-discoverable fails validation unless the Feature Record explicitly identifies it as intentionally non-UI or hidden by product policy.
+
+## Documentation Contract
+
+Every customer-facing feature must declare its documentation obligations. DevOS validates that required guide/API/catalog material exists and matches the Feature Record's status, plans, platforms, instructions, limitations, and related features.
+
+Documentation therefore becomes part of product completion rather than an unrelated manual task.
+
+## Marketing and catalog contract
+
+Feature Registry distinguishes three surfaces:
+
+- **Feature Catalog** — all public customer features;
+- **Homepage Features** — strategically important capabilities only;
+- **Pricing Features** — capabilities relevant to plan differentiation.
+
+A small utility can belong in the Guide and Feature Catalog without appearing on the homepage. Major differentiators can declare homepage and pricing obligations.
+
+## Changelog integration
+
+A lifecycle transition from implemented/beta to available can create a release obligation. If the project requires a changelog entry, the feature cannot become releasable until the entry exists.
+
+DevOS MAY generate draft release copy from the Feature Record, but generated copy remains subject to normal review.
+
+## Entitlements
+
+Feature Registry should become the canonical relationship between:
+
+**Product → Feature → Plan → Permission → UI → Tests → Pricing**
+
+Applications should ultimately prefer feature-based entitlement checks over scattered plan-name conditionals. The exact runtime entitlement API remains implementation-defined.
+
+## Platform capability matrix
+
+Feature Records declare platform support independently for web, PWA, desktop, iOS, Android, and other supported targets.
+
+DevOS can then reject release claims that conflict with actual platform state—for example, documentation claiming mobile availability while Android remains Planned.
+
+## Dependencies and impact
+
+Features may declare:
+
+- `depends_on`;
+- `enables`;
+- `conflicts_with`;
+- `supersedes`.
+
+This enables feature-level impact analysis. A change to a shared dependency can identify downstream features requiring validation or review.
+
+## AI Connect integration
+
+[AI Connect](/architecture/ai-connect) exposes Feature Registry context to execution agents. Conceptual operations include:
+
+```text
+feature.list
+feature.get
+feature.create
+feature.update
+feature.validate
+feature.dependencies
+feature.impact
+feature.release
+```
+
+These names describe the intended capability surface; they are not claims that these APIs are implemented.
+
+Before implementation begins, AI Connect should provide the worker a **Feature Work Packet** containing the Feature Record, requirements, architecture, dependencies, constraints, acceptance criteria, affected platforms, required reviews, UI/documentation obligations, and required tests.
+
+The worker therefore receives the definition of done before writing code.
+
+## Agent preflight
+
+A supervised feature build follows:
+
+```text
+Execution agent
+→ AI Connect
+→ Feature Registry
+→ Requirements / Architecture / Dependencies / Constraints
+→ Feature Work Packet
+→ Agent execution
+```
+
+Agentic Build Control SHOULD display the Feature Work Packet as part of the Build Run scope.
+
+## Agent Completion Gate
+
+A worker reporting `Task complete` does **not** make a feature releasable.
+
+AI Connect and Agentic Build Control should run a Feature Completion Check that reports each required gate independently, for example:
+
+```text
+Implementation       PASS
+Tests                PASS
+UI visibility         PASS
+Guide                 FAIL
+Feature catalog       PASS
+Homepage              FAIL
+Changelog             FAIL
+Security review       PASS
+
+FEATURE STATUS: IMPLEMENTED
+RELEASE STATUS: BLOCKED
+```
+
+The worker is not allowed to promote the feature to `AVAILABLE` while required gates fail.
+
+This completion gate is part of the DevOS control-plane behavior and SHOULD be incorporated into the Agentic Build Control v0.1+ review/approval workflow.
+
+## Automatic feature discovery
+
+A future Feature Discovery Agent may periodically compare the registry against repository evidence including routes, components, API endpoints, database schema, navigation, permissions, tests, documentation, and Git history.
+
+It can report:
+
+- unregistered implementation;
+- missing UI/discoverability;
+- missing documentation;
+- missing acceptance coverage;
+- stale documentation;
+- undocumented release.
+
+This becomes a continuous product-integrity scanner.
+
+## Feature health
+
+DevOS may calculate feature health across dimensions such as implementation, tests, documentation, UI discoverability, security, platform coverage, and release integrity. Project-level aggregation can show counts by lifecycle and coverage percentages.
+
+Health scores are diagnostic signals, not substitutes for required release gates.
+
+## Product UI
+
+The future DevOS product should expose **Project → Features** with lifecycle and product filters. A feature detail page should eventually provide:
+
+- Overview
+- Requirements
+- Architecture
+- Dependencies
+- Implementation
+- UI
+- Entitlements
+- Tests
+- Security
+- Documentation
+- Platforms
+- Release History
+- Decision Ledger relationships
+
+This becomes a living product specification rather than a static feature list.
+
+## Framework integration
+
+The Feature Registry is universal; Frameworks extend its required fields and gates.
+
+Examples:
+
+- **SaaS:** entitlement, billing, tenant isolation, admin UI;
+- **Marketplace:** buyer flow, seller flow, marketplace permissions, transaction state;
+- **AI Agent:** model/tool access, agent permissions, human approval, auditability, cost controls;
+- **Fintech:** authorization, audit, compliance, recordkeeping, security.
+
+This gives Framework selection direct consequences for implementation and release validation.
+
+## Relationship to Agentic Build Control
+
+[Agentic Build Control](/product/agentic-build-control) supervises a Build Run. Feature Registry supplies product-aware scope and completion obligations.
+
+Together:
+
+```text
+Feature Record
+→ Feature Work Packet
+→ Build Run
+→ Agent execution
+→ Validation
+→ Independent review
+→ Feature Completion Check
+→ Human approval
+→ Release eligibility
+```
+
+A Build Run can complete successfully while the Feature Record remains `IMPLEMENTED` and release-blocked. This distinction prevents technical task completion from being mistaken for product completion.
+
+## Dogfood requirement
+
+The first DevOS dogfood runs SHOULD exercise Feature Registry completion logic as soon as the Build Control vertical slice can support it. The v0.1 Application Architecture documentation run is primarily a Build Control acceptance test; subsequent customer-facing feature runs should demonstrate the full Feature Completion Contract.
+
+## Open questions
+
+- Where should Feature Records be persisted before the canonical DevOS data-model page is normative?
+- Which completion gates are global defaults versus project/framework policy?
+- Which registry operations can execution agents mutate without human approval?
+- How should repository discovery evidence be reconciled with manually declared feature metadata?
+- What status transitions require Decision Ledger or governance approval?
+- How should feature health affect release policy without becoming a misleading single score?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 0.1 | 2026-08-20 | Initial Planned Feature Registry specification derived from the Feature Lifecycle, Documentation & Release Control proposal. |

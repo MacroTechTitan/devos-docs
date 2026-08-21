@@ -3,243 +3,27 @@
   "theme": "mint",
   "name": "DevOS",
   "description": "The operating system for building software.",
-  "colors": {
-    "primary": "#1F5EFF",
-    "light": "#6E9BFF",
-    "dark": "#1341C4"
-  },
-  "background": {
-    "color": {
-      "light": "#FFFFFF",
-      "dark": "#08090B"
-    }
-  },
-  "appearance": {
-    "default": "system"
-  },
-  "seo": {
-    "metatags": {
-      "og:site_name": "DevOS Documentation",
-      "og:url": "https://docs.devos.macrotechtitan.com"
-    }
-  },
-  "navigation": {
-    "groups": [
-      {
-        "group": "Introduction",
-        "pages": [
-          "index",
-          "introduction/overview",
-          "introduction/vision",
-          "introduction/philosophy",
-          "introduction/terminology",
-          "introduction/roadmap"
-        ]
-      },
-      {
-        "group": "Getting Started",
-        "pages": [
-          "getting-started/quickstart",
-          "getting-started/product-workflow",
-          "getting-started/create-first-project",
-          "getting-started/roles-and-workspaces"
-        ]
-      },
-      {
-        "group": "Constitution",
-        "pages": [
-          "constitution/introduction",
-          "constitution/mission",
-          "constitution/principles",
-          "constitution/product-standards",
-          "constitution/engineering-standards",
-          "constitution/ai-standards",
-          "constitution/governance",
-          "constitution/versioning"
-        ]
-      },
-      {
-        "group": "Product",
-        "pages": [
-          "product/overview",
-          "product/personas",
-          "product/project-lifecycle",
-          "product/customer-workspace",
-          "product/admin-workspace",
-          "product/permissions"
-        ]
-      },
-      {
-        "group": "Core Engines",
-        "pages": [
-          "engines/overview",
-          "engines/product-interview-engine",
-          "engines/decision-engine",
-          "engines/architecture-confidence-engine",
-          "engines/decision-ledger",
-          "engines/blueprint-engine",
-          "engines/build-pipeline"
-        ]
-      },
-      {
-        "group": "Framework Library",
-        "pages": [
-          "frameworks/overview",
-          "frameworks/framework-standard",
-          "frameworks/saas",
-          "frameworks/marketplace",
-          "frameworks/ai-agent",
-          "frameworks/internal-tool",
-          "frameworks/mobile",
-          "frameworks/desktop",
-          "frameworks/fintech",
-          "frameworks/healthcare"
-        ]
-      },
-      {
-        "group": "Architecture",
-        "pages": [
-          "architecture/system-overview",
-          "architecture/application-architecture",
-          "architecture/ai-connect",
-          "architecture/plugin-system",
-          "architecture/data-model",
-          "architecture/authentication",
-          "architecture/multi-tenancy",
-          "architecture/integrations",
-          "architecture/observability",
-          "architecture/deployment"
-        ]
-      },
-      {
-        "group": "Security",
-        "pages": [
-          "security/overview",
-          "security/access-control",
-          "security/data-protection",
-          "security/secrets-management",
-          "security/audit-logging",
-          "security/incident-response"
-        ]
-      },
-      {
-        "group": "Design System",
-        "pages": [
-          "design/design-system",
-          "design/navigation",
-          "design/dashboard",
-          "design/accessibility",
-          "design/content-style"
-        ]
-      },
-      {
-        "group": "AI Agents",
-        "pages": [
-          "agents/overview",
-          "agents/agent-standard",
-          "agents/product-architect",
-          "agents/security-reviewer",
-          "agents/blueprint-writer",
-          "agents/implementation-planner"
-        ]
-      },
-      {
-        "group": "API Reference",
-        "pages": [
-          "api-reference/introduction",
-          "api-reference/authentication",
-          "api-reference/projects",
-          "api-reference/decisions",
-          "api-reference/blueprints",
-          "api-reference/templates"
-        ]
-      },
-      {
-        "group": "Governance",
-        "pages": [
-          "governance/overview",
-          "governance/documentation-lifecycle",
-          "governance/proposal-process",
-          "governance/release-process",
-          "governance/changelog-policy"
-        ]
-      },
-      {
-        "group": "RFCs",
-        "pages": [
-          "rfcs/index",
-          "rfcs/template",
-          "rfcs/rfc-001-product-interview-engine",
-          "rfcs/rfc-002-architecture-confidence-engine",
-          "rfcs/rfc-003-decision-ledger"
-        ]
-      },
-      {
-        "group": "Reference",
-        "pages": [
-          "reference/project-state",
-          "reference/glossary",
-          "reference/status-definitions",
-          "reference/decision-record-template",
-          "reference/framework-template",
-          "reference/agent-template"
-        ]
-      }
-    ]
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Product",
-        "href": "https://devos.macrotechtitan.com"
-      },
-      {
-        "label": "GitHub",
-        "href": "https://github.com/MacroTechTitan/devos-docs"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Open DevOS",
-      "href": "https://devos.macrotechtitan.com"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/MacroTechTitan/devos-docs",
-      "website": "https://devos.macrotechtitan.com"
-    },
-    "links": [
-      {
-        "header": "Documentation",
-        "items": [
-          {
-            "label": "Getting Started",
-            "href": "https://docs.devos.macrotechtitan.com/getting-started/quickstart"
-          },
-          {
-            "label": "Constitution",
-            "href": "https://docs.devos.macrotechtitan.com/constitution/introduction"
-          },
-          {
-            "label": "RFCs",
-            "href": "https://docs.devos.macrotechtitan.com/rfcs/index"
-          }
-        ]
-      },
-      {
-        "header": "Repository",
-        "items": [
-          {
-            "label": "Contributing",
-            "href": "https://github.com/MacroTechTitan/devos-docs/blob/main/CONTRIBUTING.md"
-          },
-          {
-            "label": "Security",
-            "href": "https://github.com/MacroTechTitan/devos-docs/blob/main/SECURITY.md"
-          }
-        ]
-      }
-    ]
-  }
+  "colors": {"primary":"#1F5EFF","light":"#6E9BFF","dark":"#1341C4"},
+  "background": {"color":{"light":"#FFFFFF","dark":"#08090B"}},
+  "appearance": {"default":"system"},
+  "seo": {"metatags":{"og:site_name":"DevOS Documentation","og:url":"https://docs.devos.macrotechtitan.com"}},
+  "navigation": {"groups":[
+    {"group":"Introduction","pages":["index","introduction/overview","introduction/vision","introduction/philosophy","introduction/terminology","introduction/roadmap"]},
+    {"group":"Getting Started","pages":["getting-started/quickstart","getting-started/product-workflow","getting-started/create-first-project","getting-started/roles-and-workspaces"]},
+    {"group":"Constitution","pages":["constitution/introduction","constitution/mission","constitution/principles","constitution/product-standards","constitution/engineering-standards","constitution/ai-standards","constitution/governance","constitution/versioning"]},
+    {"group":"Product","pages":["product/overview","product/personas","product/project-lifecycle","product/customer-workspace","product/admin-workspace","product/permissions","product/agentic-build-control","product/feature-registry"]},
+    {"group":"DevOS Library","pages":["library/overview"]},
+    {"group":"Core Engines","pages":["engines/overview","engines/product-interview-engine","engines/decision-engine","engines/architecture-confidence-engine","engines/decision-ledger","engines/blueprint-engine","engines/build-pipeline"]},
+    {"group":"Framework Library","pages":["frameworks/overview","frameworks/framework-standard","frameworks/saas","frameworks/marketplace","frameworks/ai-agent","frameworks/internal-tool","frameworks/mobile","frameworks/desktop","frameworks/fintech","frameworks/healthcare"]},
+    {"group":"Architecture","pages":["architecture/system-overview","architecture/application-architecture","architecture/ai-connect","architecture/plugin-system","architecture/data-model","architecture/authentication","architecture/multi-tenancy","architecture/integrations","architecture/observability","architecture/deployment"]},
+    {"group":"Security","pages":["security/overview","security/access-control","security/data-protection","security/secrets-management","security/audit-logging","security/incident-response"]},
+    {"group":"Design System","pages":["design/design-system","design/navigation","design/dashboard","design/accessibility","design/content-style"]},
+    {"group":"AI Agents","pages":["agents/overview","agents/agent-standard","agents/product-architect","agents/security-reviewer","agents/blueprint-writer","agents/implementation-planner"]},
+    {"group":"API Reference","pages":["api-reference/introduction","api-reference/authentication","api-reference/projects","api-reference/decisions","api-reference/blueprints","api-reference/templates"]},
+    {"group":"Governance","pages":["governance/overview","governance/documentation-lifecycle","governance/proposal-process","governance/release-process","governance/changelog-policy"]},
+    {"group":"RFCs","pages":["rfcs/index","rfcs/template","rfcs/rfc-001-product-interview-engine","rfcs/rfc-002-architecture-confidence-engine","rfcs/rfc-003-decision-ledger"]},
+    {"group":"Reference","pages":["reference/project-state","reference/glossary","reference/status-definitions","reference/decision-record-template","reference/framework-template","reference/agent-template"]}
+  ]},
+  "navbar":{"links":[{"label":"Product","href":"https://devos.macrotechtitan.com"},{"label":"GitHub","href":"https://github.com/MacroTechTitan/devos-docs"}],"primary":{"type":"button","label":"Open DevOS","href":"https://devos.macrotechtitan.com"}},
+  "footer":{"socials":{"github":"https://github.com/MacroTechTitan/devos-docs","website":"https://devos.macrotechtitan.com"},"links":[{"header":"Documentation","items":[{"label":"Getting Started","href":"https://docs.devos.macrotechtitan.com/getting-started/quickstart"},{"label":"Constitution","href":"https://docs.devos.macrotechtitan.com/constitution/introduction"},{"label":"RFCs","href":"https://docs.devos.macrotechtitan.com/rfcs/index"}]},{"header":"Repository","items":[{"label":"Contributing","href":"https://github.com/MacroTechTitan/devos-docs/blob/main/CONTRIBUTING.md"},{"label":"Security","href":"https://github.com/MacroTechTitan/devos-docs/blob/main/SECURITY.md"}]}]}
 }

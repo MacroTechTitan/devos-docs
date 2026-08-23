@@ -1,0 +1,431 @@
+---
+title: "Glossary"
+description: "The full alphabetical reference of DevOS terminology, including secondary, platform, and Library terms."
+---
+
+<Info>
+**Status: Reference.** This page is descriptive. [Terminology](/introduction/terminology) is the normative source for the core vocabulary; this glossary is the complete alphabetical reference and adds secondary, platform, and Library terms. Where the two disagree, Terminology governs.
+</Info>
+
+## Purpose
+
+DevOS uses a controlled vocabulary: each term has exactly one meaning across the
+repository, and pages do not introduce synonyms for terms already defined.
+
+This page lists every term in one alphabetical sequence so a reader who
+encounters an unfamiliar word has one place to look. Core terms are reproduced
+here for completeness and link to their normative definition.
+
+## How to read an entry
+
+Each entry carries a marker showing how settled the concept is. The markers match
+the ones used in [Project state](/reference/project-state):
+
+| Marker | Meaning |
+| --- | --- |
+| **Normative** | Specified in this repository. Binding on implementation. |
+| **Planned** | Committed and scoped here, not yet implemented. |
+| **Directional** | Discussed as intent. Not specified. Not binding. |
+
+A term marked Planned or Directional is a real term with an agreed meaning — the
+marker describes the maturity of the *capability*, not the stability of the
+*word*.
+
+<Note>
+A term's marker is not the same as a capability's status. Status labels
+(Concept, Planned, Prototype, Private beta, Beta, Production) describe how far a
+capability has been built, and are defined in
+[Status definitions](/reference/status-definitions). The markers here describe
+whether the *concept* is specified in this repository at all.
+</Note>
+
+---
+
+## A
+
+**Acceptance** · Normative
+The human act of converting a recommendation into a decision record. Cannot be
+performed by an agent under any configuration — Article 4 in
+[Principles](/constitution/principles), AI-2 in
+[AI standards](/constitution/ai-standards).
+
+**Adaptation** · Normative
+An organisation's modified copy of a DevOS reference framework, visible only to
+that organisation. A distinct framework with its own identifier and version, not
+an override. See [Framework Library](/frameworks/overview).
+
+**Agent** · Normative
+An AI component operating under a published contract, invoked through
+[AI Connect](/architecture/ai-connect) to perform a bounded task. Agents draft,
+score, summarise, and propose; they never accept decisions.
+
+**Agent contract** · Normative *(governing standard unwritten)*
+An agent's published statement of permitted inputs, output schema, authority
+limits, escalation path, and failure behaviour. Required by AI-1. The
+`agents/agent-standard` page that would specify its full form is declared in
+navigation and not yet written; see [Agent template](/reference/agent-template).
+
+**Agent registry** · Normative
+The organisation-scoped catalogue of agents available for invocation, with their
+contracts, contract versions, capabilities, and status. An agent that is not
+registered with a published contract cannot be invoked.
+
+**Agentic Build Control** · Planned
+The DevOS product capability for supervised agentic work: bounded build tasks,
+observable execution, independent review, and a human approval gate. It is a
+product capability built on the engine chain and AI Connect, **not** an eighth
+Core Engine. See [Agentic Build Control](/product/agentic-build-control).
+
+**AI Build Pipeline** · Normative *(Concept status)*
+Engine 7. Consumes a blueprint and produces ordered build units. See
+[Build pipeline](/engines/build-pipeline).
+
+**AI Connect** · Normative *(Concept status)*
+The orchestration layer between DevOS engines and AI agents. Every model
+invocation passes through it. It is a platform-layer capability, not an engine.
+See [AI Connect](/architecture/ai-connect).
+
+**Applicability condition** · Normative
+A stated condition on a brief element under which a framework applies. The unit
+the Decision Engine matches against.
+
+**Architecture Confidence Engine** · Normative *(Concept status)*
+Engine 4. Consumes a recommendation set and produces a scored set with evidence
+and named gaps. See
+[Architecture Confidence Engine](/engines/architecture-confidence-engine).
+
+**Artefact** · Normative
+A durable output of one workflow stage that the next stage consumes. The spelling
+`artefact` is the repository convention.
+
+**Asset** — see **Library asset**.
+
+## B
+
+**Blueprint** · Normative *(Concept status)*
+The implementation plan compiled from the ledger: modules, data model, interface
+contracts, milestones, and test strategy. See
+[Blueprint Engine](/engines/blueprint-engine).
+
+**Blueprint Engine** · Normative *(Concept status)*
+Engine 6. Consumes the Decision Ledger and produces a blueprint.
+
+**Build event** · Planned
+A normalised, timestamped record of meaningful activity during a Build Run,
+carrying type, summary, worker, affected target, severity, and an
+action-required flag. Raw logs are preserved separately for diagnosis.
+
+**Build Run** · Planned
+One supervised build task and its lifecycle, from queued through a human
+approve/reject decision. The unit Agentic Build Control supervises. Its lifecycle
+states are listed in [Status definitions](/reference/status-definitions).
+
+**Build unit** · Normative
+The smallest scoped item in a build pipeline — either an AI build prompt or a
+human work item.
+
+## C
+
+**Capability** · Normative
+A named unit of work requested by name rather than by provider. Used for both
+agent capabilities (AI Connect) and plugin capabilities (Plugin System).
+
+**Capability routing** · Normative
+Resolving a requested capability to a specific agent and contract version.
+
+**Capability status** · Normative
+The maturity label every capability page declares. One of Concept, Planned,
+Prototype, Private beta, Beta, Production. See
+[Status definitions](/reference/status-definitions).
+
+**Completion gate** · Planned
+A required check a feature must pass before it is release-eligible. A feature can
+be technically implemented and still release-blocked. See
+[Feature Registry](/product/feature-registry).
+
+**Composition** · Normative
+The combination of a `shape` framework with a `constraint` framework into one
+candidate architecture. A composition is a candidate, not a resolution.
+
+**Composition role** · Normative
+Whether a framework contributes system shape or data-handling and regulatory
+constraint. Exactly one of `shape` or `constraint`.
+
+**Confidence Review** · Normative
+The stage at which a user examines recommendations, their scores, and their
+evidence gaps before accepting any decision.
+
+**Confidence Score** · Normative
+A normalised value from 0.00 to 1.00 attached to a recommendation, with
+supporting evidence and named gaps. Computed from recorded inputs, never
+asserted by a model — AI-5.
+
+**Constitution** · Normative
+The non-negotiable principles and standards governing DevOS. See
+[Constitution](/constitution/introduction).
+
+## D
+
+**Decision** · Normative
+A choice a human has accepted, recorded immutably in the Decision Ledger with
+context, alternatives, and consequences.
+
+**Decision Engine** · Normative *(Prototype status)*
+Engine 3. Consumes a Product Brief and the framework library, produces a
+recommendation set. See [Decision Engine](/engines/decision-engine).
+
+**Decision Ledger** · Normative *(Prototype status)*
+Engine 5, and the complete ordered set of decision records for a project.
+Append-only: records are superseded, never edited. See
+[Decision Ledger](/engines/decision-ledger).
+
+**Decision record** · Normative
+The stored form of a decision. Its record status is one of `ACTIVE`,
+`SUPERSEDED`, `REJECTED`, `DEFERRED`. See
+[Decision record template](/reference/decision-record-template).
+
+**Degraded mode** · Normative
+Operation with an optional plugin capability unavailable, surfaced to affected
+users rather than hidden.
+
+**Deprecation** · Normative
+Removing a framework or Library asset version from future matching or selection
+without altering anything already recorded against it.
+
+**DevOS Library** · Planned
+The reusable, versioned engineering assets DevOS publishes in Git and exposes
+through the future product UI. See [DevOS Library](/library/overview).
+
+**DevOS UI** · Directional
+The future human interaction surface over DevOS artefacts. It owns no
+engineering knowledge; it presents artefacts owned by other layers. See
+[Artefact ownership](/library/ownership).
+
+## E
+
+**Engine** · Normative
+A named DevOS component that transforms one artefact into the next under a
+documented contract. **There are seven.** The term describes a transformation
+contract, not a deployment unit. See [Core Engines](/engines/overview).
+
+**Evidence** · Normative
+Recorded material supporting a confidence assessment, a gate outcome, or a
+completion claim. An assertion by the party being assessed is not evidence.
+
+**Evidence gap** · Normative
+A named absence of information affecting a score or a recommendation. Gaps are
+declared rather than smoothed over — AI-6.
+
+**Execution session** · Normative
+A tracked, resumable unit of agent execution within AI Connect.
+
+## F
+
+**Feature** · Planned
+A product capability tracked in the Feature Registry with a lifecycle,
+dependencies, completion obligations, and release eligibility.
+
+**Feature Registry** · Planned
+The DevOS subsystem that defines product truth: what capabilities exist and what
+they must satisfy to be released. It is not a Core Engine. See
+[Feature Registry](/product/feature-registry).
+
+**Feature Work Packet** · Planned
+The bundle of feature context — requirements, constraints, dependencies,
+acceptance criteria, obligations, and required tests — supplied to an execution
+agent before implementation, and to the reviewer afterwards.
+
+**Framework** · Normative
+A reference architecture for a class of system, written to the
+[framework standard](/frameworks/framework-standard). States where it applies,
+where it does not, what breaks first, and what it costs to operate.
+
+**Framework class** · Normative
+The class of system a framework describes. A framework declares exactly one. The
+library covers eight.
+
+**Framework Engine** · Normative *(Planned status)*
+Engine 2. Maintains, validates, indexes, and serves the framework library. The
+one engine with no page in the Core Engines section; specified with the library
+it governs.
+
+**Framework Library** · Normative *(Planned status)*
+The set of reference architectures DevOS matches briefs against — eight
+frameworks, six `shape` and two `constraint`. See
+[Framework Library](/frameworks/overview).
+
+## G — I
+
+**Gate** · Planned
+A condition that must hold before work may leave a stage, together with what
+counts as evidence and what happens on failure. See
+[Processes](/library/processes).
+
+**Idea** · Normative
+The user's initial free-text description of what they intend to build.
+Unstructured input, not an artefact.
+
+**Instantiation** · Planned
+Copying a template into a project, after which the copy is owned by the project
+and template changes do not propagate. See [Templates](/library/templates).
+
+## L — M
+
+**Library asset** · Planned
+A reusable, identified, versioned, published engineering asset in the DevOS
+Library — a skill, process, template, standard, checklist, policy, prompt, agent
+definition, or validation pack. See
+[Reusable assets](/library/asset-standard).
+
+**Manifest** · Normative
+A plugin's declaration of identity, version, capabilities, permissions,
+configuration, and dependencies.
+
+**Member** · Normative
+A user account's membership in an organisation, carrying exactly one role.
+
+**MTTBuild** · Planned
+The Macro Tech Titan standard software-build workflow, modelled as a
+[skill](/library/skills). It encodes build discipline; it is not DevOS
+architecture and does not define what to build.
+
+**Multi-agent workflow** · Normative
+A composition, declared in advance, in which several agent executions contribute
+to one engine request.
+
+## O — P
+
+**Organisation** · Normative
+The top-level tenant boundary. Owns projects, members, and billing. All data
+isolation is enforced here — Article 7.
+
+**Override** · Planned
+A project's explicit, recorded divergence from a Library asset, naming what it
+overrides and why. See [Artefact ownership](/library/ownership).
+
+**Pinning** · Normative
+Recording the exact version of a framework or asset a decision or run was made
+against, so later deprecation never alters an existing record. A pinned version
+that no longer resolves fails explicitly rather than falling back.
+
+**Platform layer** · Normative
+The components engines depend on but that transform no artefact: AI Connect and
+the Plugin System. **Neither is an engine.**
+
+**Plugin** · Normative
+A registered, versioned extension providing one or more capabilities to DevOS.
+
+**Plugin class** · Normative
+The category of external system a plugin serves: AI provider, deployment,
+repository, database, communication, or authentication.
+
+**Plugin System** · Normative *(Concept status)*
+The extension model through which DevOS connects to every external system. See
+[Plugin System](/architecture/plugin-system).
+
+**Process** · Planned
+A reusable operational sequence: the ordered stages a class of work moves
+through, and the gates between them. See [Processes](/library/processes).
+
+**Product Brief** · Normative
+The structured output of the product interview, and the single input to
+architecture recommendation.
+
+**Product Interview** · Normative
+The adaptive question sequence that produces a brief. Branches on answers and
+records unknowns explicitly.
+
+**Product Interview Engine** · Normative *(Prototype status)*
+Engine 1. Consumes an idea and produces a Product Brief.
+
+**Project** · Normative
+A single thing being designed and built. Owns exactly one brief, one ledger, and
+zero or more blueprints.
+
+**Prompt envelope** · Normative
+The complete structured input to an agent execution: scope, context, constraints,
+authority limits, and output schema.
+
+**Publication gate** · Normative
+The validation a framework passes before publication. An empty required section
+is a validation failure, not a warning.
+
+## R
+
+**Recommendation** · Normative
+A candidate architecture proposed by the Decision Engine, matched from the
+framework library against a brief. Always carries a confidence assessment. Not
+yet a decision.
+
+**Registration** · Normative
+Making a plugin or agent known to DevOS. Distinct from installation.
+
+**Release eligibility** · Planned
+Whether a feature has passed the required completion gates. Distinct from whether
+it is implemented.
+
+**Requirement** · Directional
+A discrete statement of what a system must do. DevOS records requirements inside
+the Product Brief and traces them forward through the artefact chain; a
+standalone requirement artefact distinct from the brief is **not currently
+specified** in this repository. See [Project state](/reference/project-state).
+
+**Result envelope** · Normative
+The structured output of an agent execution: content, validation state,
+attribution, cost, gaps, and failure cause. Attribution is attached here, before
+an engine receives the result — AI-3.
+
+**Role** · Normative
+A named set of permissions. See [Permissions](/product/permissions).
+
+## S
+
+**Skill** · Planned
+Reusable procedural knowledge telling an execution agent how to perform a class
+of work well — not what to build. See [Skills](/library/skills).
+
+**Supersession** · Normative
+Replacing a decision record with a newer one. The prior record remains, marked
+`SUPERSEDED`, pointing to its successor.
+
+## T — W
+
+**Template** · Planned
+A reusable starting point instantiated into a project and thereafter owned by it.
+See [Templates](/library/templates).
+
+**Traceability** · Normative
+The property that every element of a downstream artefact can be attributed to a
+specific upstream element. An output element with no resolvable origin is a
+defect, not a warning.
+
+**Validation** · Normative
+Checking an artefact against its stated requirements. Used in three distinct
+senses in this repository, and they are not interchangeable: **framework
+validation** (against the framework standard, before publication), **result
+validation** (an agent's output against its requested schema, inside AI Connect),
+and **documentation validation** (`mint validate` against navigation and links).
+
+**Workspace** · Normative
+A member's working context within an organisation. Two kinds exist: customer
+workspace and admin workspace.
+
+---
+
+## Terms deliberately not defined here
+
+Some words appear in this repository as ordinary English rather than as DevOS
+terms, and defining them would imply a precision the specifications do not
+claim:
+
+- **Operational** — used as an adjective ("operational cost profile"), never as a
+  status label. The status vocabulary is in
+  [Status definitions](/reference/status-definitions).
+- **Sprint** — belongs to build-workflow practice, not to DevOS specifications.
+- **Task** — used informally. The specified unit of work is a **build unit**.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. Full alphabetical reference complementing the normative Terminology page. |

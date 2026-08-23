@@ -1,0 +1,236 @@
+---
+title: "Framework template"
+description: "A copyable skeleton for a new framework, conforming to the thirteen required sections of the framework standard."
+---
+
+<Info>
+**Status: Reference.** This template reproduces the required structure defined by the [framework standard](/frameworks/framework-standard), which governs. It creates no competing format. The Framework Library is at capability status **Planned**: the standard is complete, and the Framework Engine that would validate submissions is not implemented.
+</Info>
+
+## Purpose
+
+A framework is a reference architecture for a class of system. This page is the
+copyable skeleton for authoring one.
+
+The structure is not a stylistic preference. **Headings are part of the retrieval
+contract** — Article 10 in [Principles](/constitution/principles) — so a
+framework using different headings fails validation *even when the content is
+present and correct*. Copy the skeleton verbatim.
+
+## The thirteen required sections
+
+Every framework MUST contain these sections, with these headings, in this order.
+
+| # | Section | Rule |
+| --- | --- | --- |
+| 1 | Identity | FS-1 |
+| 2 | Purpose | — |
+| 3 | Applicability conditions | FS-2 |
+| 4 | When not to use this | FS-3 — Article 6 |
+| 5 | Failure modes | FS-4 — Article 6 |
+| 6 | Abandonment conditions | FS-5 — Article 6 |
+| 7 | Architecture shape | FS-6 |
+| 8 | Data and compliance profile | FS-7 |
+| 9 | Operational cost profile | FS-8 |
+| 10 | Composition | FS-9 |
+| 11 | Implied decisions | FS-10 |
+| 12 | Evidence and gaps | FS-12 |
+| 13 | Version history | FS-13 |
+
+**An empty section is a validation failure, not a warning.** A "When not to use
+this" heading above nothing is precisely the omission Article 6 exists to
+prevent, and the publication gate refuses it.
+
+The eight reference frameworks in the [Framework Library](/frameworks/overview)
+conform to this structure exactly. [SaaS](/frameworks/saas) is a useful worked
+example of a `shape` framework; [Fintech](/frameworks/fintech) of a `constraint`
+framework.
+
+## Template
+
+```markdown
+---
+title: "<Framework name>"
+description: "<One sentence: the class of system this framework describes.>"
+---
+
+<Info>
+**Status: <Concept | Planned | Prototype | Private beta | Beta | Production>.**
+<One or two sentences on what is settled and what is not.>
+</Info>
+
+## Identity
+
+| Field | Value |
+| --- | --- |
+| Framework ID | `<namespace.name>` |
+| Framework class | <the one class of system this describes> |
+| Composition role | `shape` or `constraint` |
+| Version | <MAJOR.MINOR> |
+| Status | <capability status> |
+| Derived from | <reference framework and version, or "None — DevOS reference framework"> |
+
+## Purpose
+
+<What class of system this describes, and why it exists as a distinct framework
+rather than a variation of another. Name the property that is hardest to change
+later — that is usually the reason the framework is worth having.>
+
+## Applicability conditions
+
+<Conditions on Product Brief elements under which this framework applies. Each
+MUST be evaluable against a brief element that actually exists, and each MUST
+reference the element by name. Prose that a reader must interpret is not a
+condition — the Decision Engine matches conditions, not paragraphs.>
+
+| Condition | Brief element | Applies when |
+| --- | --- | --- |
+| <name> | <element> | <evaluable condition> |
+
+## When not to use this
+
+<Required, and MUST NOT be empty — Article 6. The conditions under which this
+framework is the wrong answer, and what to look at instead. A framework that
+cannot discriminate against itself cannot be compared with alternatives.>
+
+## Failure modes
+
+<Required. What breaks first under stress, how it is detected, and what it costs
+to recover. Name concrete failures, not risk categories.>
+
+| Failure | Detection | Response |
+| --- | --- | --- |
+
+## Abandonment conditions
+
+<Required. The observable conditions under which a team should stop using this
+architecture and migrate. State what the migration costs — an abandonment
+condition with no stated exit cost understates the decision.>
+
+## Architecture shape
+
+<The structural description: boundaries, responsibilities, data flow, and the
+properties the shape guarantees.
+
+MUST NOT name vendors or products — FS-6. Describe capabilities and constraints;
+vendor selection is a decision the adopting organisation records in its
+[Decision Ledger](/engines/decision-ledger).>
+
+## Data and compliance profile
+
+<What data this class of system holds, its sensitivity, retention and residency
+obligations, and the regulatory regimes that typically apply. Where an obligation
+cannot be determined without the brief, record it as an evidence gap below
+rather than assuming a default.>
+
+## Operational cost profile
+
+<What running this costs in skills and infrastructure — the team capability
+required, the recurring operational load, and what grows with scale.
+
+State cost in skills and load, not currency. Monetary figures are prohibited:
+they are fabricated specifics — FS-8, AI-7.>
+
+## Composition
+
+<For a `shape` framework: which `constraint` frameworks it commonly composes
+with, and what they change.
+
+For a `constraint` framework: which `shape` frameworks it composes with, and the
+enumerated constraints it contributes.
+
+Where a contributed constraint contradicts the primary's shape, the framework
+MUST name the conflict rather than resolve it. A composition is a candidate, not
+a resolution.>
+
+## Implied decisions
+
+<The decisions adopting this framework forces, listed but NOT made — FS-10. Each
+becomes a decision a human accepts and records. Listing them here is what stops
+them being made silently by the act of choosing a framework.>
+
+| Implied decision | Why it follows |
+| --- | --- |
+
+## Evidence and gaps
+
+<What supports the claims above, and what is not known.
+
+Named gaps are required — AI-6. MUST NOT contain invented benchmark figures,
+adoption statistics, or customer names — AI-7. Where a specific is unavailable,
+it is recorded here as a gap, not estimated.>
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | <date> | Initial framework. |
+```
+
+## Authoring rules that catch most rejections
+
+The publication gate refuses more submissions for these than for anything else.
+
+**Article 6 sections must be populated.** Sections 4, 5, and 6 — *When not to use
+this*, *Failure modes*, *Abandonment conditions* — are the ones authors leave
+thin. A framework documenting only its strengths cannot discriminate between
+candidates and MUST NOT be published.
+
+**Conditions must resolve to real brief elements.** An applicability condition
+referencing an element the Product Brief does not contain fails validation, and
+the unresolvable element is named in the failure.
+
+**No vendors, no monetary figures, no fabricated specifics.** A framework
+describes architecture, not a stack. Benchmark numbers, adoption statistics, and
+customer names are prohibited unless genuinely sourced; where a specific is
+unavailable it belongs in *Evidence and gaps*.
+
+**One class, one composition role.** A framework declares exactly one framework
+class and exactly one composition role. A framework that is both `shape` and
+`constraint` is two frameworks.
+
+**Composition requires one `shape` and one `constraint`.** A declared composition
+between two `shape` frameworks fails validation.
+
+## Versioning
+
+| Change | Increment |
+| --- | --- |
+| Editorial clarification, no change of meaning | None |
+| Added failure mode, added implied decision, clarified condition | MINOR |
+| Applicability condition added | MINOR |
+| Applicability condition changed, narrowed, or removed | MAJOR |
+| Composition role or class changed | MAJOR |
+| Abandonment condition changed or removed | MAJOR |
+
+A MAJOR increment means a brief that matched the prior version may not match this
+one. It produces a new framework version; it never rewrites the version a
+decision was made against.
+
+## Adaptations
+
+An organisation adapting a DevOS reference framework records the source framework
+and version in `Derived from`. The adaptation is a **distinct framework with its
+own identifier and version**, not an override — so a later reference version
+never silently changes the organisation's behaviour.
+
+An adaptation MUST NOT contain client-identifying or project-specific content.
+Reuse that carries one client's context into another client's project is a
+confidentiality failure, not a reuse win.
+
+## Using this as a Library asset
+
+Under the [asset standard](/library/asset-standard) this is a **template**:
+instantiated into a framework document, after which the copy is owned by its
+author — see [Templates](/library/templates).
+
+The instantiation boundary has a hard edge here. Presentation within a section is
+the author's, but the **section set and their headings are fixed by the framework
+standard**, not by this template. Renaming or reordering a heading breaks the
+retrieval contract and fails validation, whatever the content says.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. Copyable skeleton for the thirteen required sections. |

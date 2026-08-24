@@ -16,7 +16,7 @@ another knows they are not the same scale and were never meant to be compared.
 
 ## There is no universal status enum
 
-DevOS uses **six distinct status vocabularies**. They are not variants of one
+DevOS uses **seven distinct status vocabularies**. They are not variants of one
 lifecycle, and merging them would destroy information rather than simplify it.
 
 The reason is that they answer different questions:
@@ -29,6 +29,7 @@ The reason is that they answer different questions:
 | Decision record status | Does *this decision* still govern the project? |
 | Feature lifecycle | Where is *this product feature* between proposal and retirement? |
 | Build Run lifecycle | What is *this supervised run* doing right now? |
+| AI Connect execution lifecycle | What is *this single agent invocation* doing right now? |
 
 A framework at `PUBLISHED` and a feature at `AVAILABLE` are both "done" in some
 sense, but one means "matchable by the Decision Engine" and the other means "all
@@ -221,6 +222,40 @@ perform either — Article 4 and AI-2.
 
 ---
 
+## 7. AI Connect execution lifecycle
+
+**Scope:** one agent execution session inside
+[AI Connect](/architecture/ai-connect).
+**Normative source:** [AI Connect](/architecture/ai-connect).
+
+This vocabulary answers: **what is this single invocation doing, and may its result be used?**
+
+| State | Result envelope returned | Consumable by engine |
+| --- | --- | --- |
+| `ROUTING` | No | No |
+| `ENVELOPED` | No | No |
+| `EXECUTING` | No | No |
+| `VALIDATING` | No | No |
+| `SUSPENDED` | No | No — resumable under the original envelope |
+| `COMPLETED` | Yes | Yes |
+| `FAILED` | Yes, with failure cause | No |
+| `REJECTED` | Yes, with failure cause | No |
+| `EXPIRED` | Yes, with failure cause | No |
+
+The second and third columns differ on purpose. A `FAILED` execution **does** return an
+envelope — stating the failure — but that envelope is not consumable as content. It MUST NOT
+carry approximated output or a simpler substituted task — AI-9.
+
+This is the finest-grained of the seven vocabularies and the shortest-lived: a session is one
+invocation, not a unit of work a person tracks. It is easily confused with the
+[Build Run lifecycle](#6-build-run-lifecycle), which is deliberately coarser — a Build Run is
+supervised by an operator and may span many executions.
+
+Note that `COMPLETED`, `FAILED`, and `REJECTED` appear in both vocabularies with different
+scopes. A Build Run at `RUNNING` may contain an execution at `FAILED`.
+
+---
+
 ## Choosing the right vocabulary
 
 | If you are describing… | Use |
@@ -231,6 +266,7 @@ perform either — Article 4 and AI-2.
 | Whether a decision still governs | Decision record status |
 | Where a product feature sits | Feature lifecycle |
 | What a supervised run is doing | Build Run lifecycle |
+| What one agent invocation is doing | AI Connect execution lifecycle |
 
 A page that needs two of these states both, in separate fields, with their
 vocabularies named. It does not blend them into a single "status" field, because
@@ -248,4 +284,5 @@ genuinely optional.
 
 | Version | Date | Change |
 | --- | --- | --- |
-| 1.0 | 2026-08-23 | Initial page. Inventories the six status vocabularies, their scopes, and why they are not unified. |
+| 1.0 | 2026-08-23 | Initial page. Inventories the status vocabularies, their scopes, and why they are not unified. |
+| 1.1 | 2026-08-23 | Added the AI Connect execution lifecycle, omitted from 1.0. Seven vocabularies, not six. |

@@ -1,0 +1,216 @@
+---
+title: "Observability"
+description: "The five signal classes DevOS produces, what each is for, and why only one of them is evidence."
+---
+
+<Info>
+**Status: Planned.** ES-10 makes observability a release gate, and several pages defer here for alerting. This page defines the signal classes and the gate. It names **no vendor, storage technology, retention duration, or alert threshold** — none is specified anywhere in this repository.
+</Info>
+
+## Purpose
+
+DevOS produces five distinct kinds of signal. They are routinely collapsed into "logs", and the
+collapse is expensive: it leads to audit records being sampled under load, or to operational
+telemetry being retained as though it were evidence.
+
+This page separates them, states what each is for, and defines the release gate ES-10 imposes.
+
+## Five signal classes
+
+| Class | Purpose | Mutable | Sampling permitted | Owner |
+| --- | --- | --- | --- | --- |
+| **Metrics** | Aggregate health: success rate, latency, error classes | Aggregated | Yes | This page |
+| **Application logs** | Reconstruct a failed workflow | Yes | Yes | This page |
+| **AI Connect execution telemetry** | Observe, cost, and resume one invocation | Operational | No — per-execution | [AI Connect](/architecture/ai-connect) |
+| **Build Control execution events** | Let an operator supervise work in progress | Operational | No — per-run | [Agentic Build Control](/product/agentic-build-control) |
+| **Audit events** | **Evidence** of who did what | **Never** | **Never** | [Audit logging](/security/audit-logging) |
+
+The separator is not storage or format. It is **whether the signal is evidence**.
+
+The first two exist to help an engineer; they may be sampled, truncated, or dropped under load
+without anyone's rights being affected. The middle two are operational views of specific work.
+Only the last is append-only, unconditional on success, and required to record denials.
+
+<Note>
+**The rule that follows.** A signal may be *both* — `ai_connect.execution_started` is telemetry
+and audit; a Build Control approval is a product event and an audit event because a human
+accepted an outcome. Where a signal is both, **the audit obligation governs**: it is complete and
+append-only regardless of what the operational view retains or drops.
+
+Implementing audit as a log level, a filtered stream, or a sampled sink violates ES-5 whatever
+the retention settings say.
+</Note>
+
+## Metrics
+
+ES-10 requires, before a capability reaches Beta or Production, metrics for its **success rate,
+latency, and error classes**.
+
+The engine chain gives those a natural shape, because each engine already declares its failure
+modes and its terminal states:
+
+| Signal | Example |
+| --- | --- |
+| Success rate | Compilations succeeded versus `blueprint.compilation_failed` |
+| Latency | Time from capability request to result envelope |
+| Error classes | Schema validation failure, cost limit, provider unavailable, authority violation |
+
+Two DevOS-specific measures matter more than generic ones, and both come from existing
+requirements:
+
+- **Confidence calibration.** [Roadmap](/introduction/roadmap) sets an exit criterion that
+  high-confidence recommendations are reversed less often than low-confidence ones — and states
+  that if calibration cannot be demonstrated, **scoring is removed rather than tuned**. That is
+  a measurement obligation, not a nice-to-have.
+- **`recommendation.no_match` rate.** A pattern of no-matches is the signal that the framework
+  library needs extending, which the Decision Engine states explicitly.
+
+## Application logs
+
+ES-10 requires **structured logs sufficient to reconstruct a failed user workflow**.
+
+Two constraints already apply and are not observability's to relax:
+
+- **No credentials.** Credentials, tokens, and private keys MUST NOT appear in logs — ES-7.
+- **Organisation scope.** Log queries are subject to ES-2 like any other retrieval. Support
+  tooling is named explicitly there as in scope.
+
+<Note>
+**Not specified.** Log format, transport, storage, retention, and query interface are absent
+from this repository. The requirement is sufficiency for workflow reconstruction; the mechanism
+is implementation-defined.
+</Note>
+
+## Execution telemetry
+
+[AI Connect](/architecture/ai-connect) records per-execution state — its envelope, its lifecycle
+state, cost, and result — for three reasons that are not debugging: an untracked execution cannot
+be audited, costed, or resumed.
+
+The execution lifecycle is one of the seven vocabularies in
+[Status definitions](/reference/status-definitions) and is not an observability concept: it is
+operational state the platform acts on.
+
+Cost tracking is likewise specified there and is attributed to an organisation, project, and
+capability.
+
+## Build Control events
+
+[Agentic Build Control](/product/agentic-build-control) normalises worker activity into
+timestamped events carrying type, summary, worker, affected target, severity, and an
+action-required flag — **and preserves raw logs separately for diagnosis.**
+
+That separation is itself an observability decision worth naming: raw terminal output is a
+diagnostic artefact, and the normalised event is the supervisory signal. Neither replaces the
+other, and the raw stream is not what an operator watches.
+
+## The release gate
+
+> **ES-10.** A capability MUST NOT be promoted to Beta or Production without structured logs
+> sufficient to reconstruct a failed user workflow, metrics for success rate, latency, and error
+> classes, and an alert on the failure mode that would harm a user most.
+>
+> Observability retrofitted after an incident MUST be recorded as a **defect**, not as
+> improvement work.
+
+Two things follow.
+
+**The gate binds status promotion, not release timing.** Every DevOS capability is currently at
+Concept, Planned, or Prototype — so nothing has yet passed this gate, and nothing is required to
+have.
+
+**Retrofit is a defect.** Recording it as improvement work would let the same gap recur, since
+improvement work is optional and defects are not.
+
+## Detection and alerting
+
+[Incident response](/security/incident-response) records that detection is specified while
+alerting is not, and defers here. This page **closes part of that and leaves the rest open**, as
+the evidence permits.
+
+**Resolved.** ES-10 makes at least one alert a release gate: the failure mode that would harm a
+user most must be alerted before Beta or Production. That is an obligation, and it is
+per-capability rather than global.
+
+**Resolved.** The signals to alert on already exist and need no new detection mechanism. They are
+declared by their emitting pages:
+
+| Signal | Emitter |
+| --- | --- |
+| `ai_connect.authority_violation` | AI Connect — security event |
+| `plugin.permission_violation` | Plugin System — security event |
+| Directive injection detected | AI Connect — AI-10, security event |
+| `ai_connect.cost_limit_reached` | AI Connect |
+| `plugin.health_changed`, `plugin.suspended` | Plugin System |
+| Authorisation denial patterns | Every component — ES-5 |
+
+**Left open.** *Thresholds, channels, and routing.* No page states what rate of denials
+constitutes a pattern, who is notified, or through what channel. Those are recorded as open
+questions here and in [Incident response](/security/incident-response) rather than invented.
+
+The one structural statement this page does make: **an alert is derived from signals, never from
+the audit log as a data source.** Audit is evidence, read deliberately by Owners and Admins. A
+system that alerts by tailing the audit log has made evidence into a stream, with the sampling
+and retention pressures that implies.
+
+## Tenancy
+
+Observability data is subject to the same boundary as everything else.
+
+| Rule | Consequence |
+| --- | --- |
+| ES-2 applies to analytics and support tooling explicitly | An operator view spanning organisations is not a permission that exists |
+| Aggregate metrics may span organisations only where **no tenant data is recoverable** | Counts and latencies, not identifiers or content |
+
+The second is a consequence rather than a quoted rule, and it is the honest reading of Article 7:
+a metric is not an access path if nothing about a tenant can be recovered from it. Where an
+aggregate would permit recovery, it is tenant data.
+
+## Reusable versus operational
+
+| Git-canonical | Operational |
+| --- | --- |
+| This baseline; the ES-10 gate | Metrics, logs, traces |
+| An incident-response [process](/library/processes) | Alert configuration and routing |
+| A diagnostic [skill](/library/skills) | Execution telemetry, Build Control events |
+| Dashboard definitions as versioned artefacts | Dashboard state and history |
+
+**The documentation repository is not where telemetry lives.** Logs, metrics, execution records,
+and events are operational without exception.
+
+## What this page does not specify
+
+| Not specified | Why |
+| --- | --- |
+| Vendor, platform, or storage technology | None named anywhere in this repository |
+| Log format, transport, or query interface | Requirement is sufficiency, not shape |
+| Retention durations, any class | No page states one |
+| Alert thresholds, channels, escalation routing | Open; see above |
+| Tracing or correlation-identifier scheme | Not specified |
+| Dashboard or reporting surface | Not specified |
+
+## Acceptance criteria
+
+- No capability reaches Beta or Production without logs, metrics, and at least one alert.
+- Observability retrofitted after an incident is recorded as a defect.
+- No credential value appears in any log, metric, or trace.
+- No observability query crosses an organisation boundary.
+- Audit events are never sampled, truncated, or dropped, whatever the log pipeline does.
+- No aggregate permits recovery of tenant-identifying data.
+
+## Open questions
+
+- What threshold of authorisation denials constitutes a pattern worth alerting on?
+- Who is notified on a security event, through what channel, and within what window? Also open in
+  [Incident response](/security/incident-response).
+- What retention applies to logs, metrics, and execution telemetry, given that none is evidence?
+- Should executions carry a correlation identifier linking telemetry, Build Control events, and
+  audit records for one user action?
+- How is confidence calibration measured in practice, and at what project volume does it become
+  credible? Open in [Roadmap](/introduction/roadmap).
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-24 | Initial page. Separates the five signal classes, states the ES-10 gate, and closes the detection half of Security's alerting question. |

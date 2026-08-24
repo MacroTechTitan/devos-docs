@@ -1,0 +1,283 @@
+---
+title: "Audit logging"
+description: "The audit contract every DevOS component already depends on: what is recorded, what it must contain, and what audit is not."
+---
+
+<Info>
+**Status: Planned.** The audit contract is specified; the log is not implemented. Every requirement below is reconstructed from obligations already stated elsewhere — ES-5, the audit event tables on each engine, [AI Connect](/architecture/ai-connect), and the [Plugin System](/architecture/plugin-system). This page introduces no new logging system.
+</Info>
+
+## Purpose
+
+Eleven pages in this repository defer to this one. Each declares audit events it emits and
+what those events record, and each ends by pointing here for the contract those events conform
+to. This page states that contract.
+
+It is a reconstruction, not an invention. The obligation is already constitutional:
+
+> **ES-5.** Every operation that creates, supersedes, or removes data, and every authorisation
+> denial, MUST emit an audit event. Audit events MUST record actor identity, organisation,
+> action, target, outcome, and timestamp, and MUST be append-only. Audit writes MUST NOT be
+> conditional on the success of the operation they describe.
+
+Everything below elaborates that requirement against what the rest of the repository already
+declares.
+
+## What audit is for
+
+An audit log answers *who did what, to what, when, and with what outcome* — after the fact,
+to someone who was not there, in a way the acting party cannot revise.
+
+That purpose is what separates it from three neighbouring things it is routinely confused with.
+
+| Not audit | What it is | Where specified |
+| --- | --- | --- |
+| **Application logs** | Structured logs, metrics, and alerts sufficient to reconstruct a failed workflow and to detect failure classes. Operational, high-volume, retained for debugging. | ES-10, `architecture/observability` |
+| **Build Control execution events** | Normalised worker activity within one supervised run — type, summary, affected target, severity, action-required flag. A product timeline for an operator watching work happen. | [Agentic Build Control](/product/agentic-build-control) |
+| **AI Connect execution telemetry** | Session state, resumption data, cost accounting, and result envelopes for one agent invocation. | [AI Connect](/architecture/ai-connect) |
+
+The distinction is not storage. It is **authority and mutability**.
+
+An application log exists to help an engineer; it may be sampled, truncated, or dropped under
+load without anyone's rights being affected. A Build Control execution event exists to help an
+operator supervise; it is a view of work in progress. AI Connect telemetry exists to make one
+invocation observable and costable.
+
+An audit event exists to be **evidence**. It is append-only, it is not conditional on the
+operation succeeding, and it records denials — which the other three have no reason to.
+
+<Note>
+The three overlap with audit at specific points, and those points are audit events in their own
+right. `ai_connect.execution_started` is telemetry *and* audit. A Build Control approval is a
+product event *and* an audit event, because a human accepted an outcome. Where they overlap the
+audit obligation governs: the record is append-only and complete regardless of what the
+operational view retains.
+</Note>
+
+## The event catalogue
+
+Forty-two events are already declared across nine emitters. These names are stable and form part
+of each component's published contract — they are reproduced here, not defined here.
+
+### Engines
+
+| Emitter | Events |
+| --- | --- |
+| 1. [Product Interview](/engines/product-interview-engine) | `interview.started`, `interview.answered`, `interview.unknown_declared`, `interview.abandoned`, `brief.completed`, `brief.reopened` |
+| 2. [Framework Engine](/frameworks/overview) | `framework.published`, `framework.deprecated`, `framework.validation_failed` |
+| 3. [Decision Engine](/engines/decision-engine) | `recommendation.requested`, `recommendation.generated`, `recommendation.no_match` |
+| 4. [Confidence Engine](/engines/architecture-confidence-engine) | `confidence.scored`, `confidence.gap_identified`, `confidence.recomputed` |
+| 5. [Decision Ledger](/engines/decision-ledger) | `decision.accepted`, `decision.rejected`, `decision.deferred`, `decision.superseded` |
+| 6. [Blueprint Engine](/engines/blueprint-engine) | `blueprint.compiled`, `blueprint.compilation_failed`, `blueprint.marked_stale` |
+| 7. [Build Pipeline](/engines/build-pipeline) | `pipeline.compiled`, `pipeline.compilation_failed`, `build_unit.emitted`, `build_unit.completed` |
+
+### Platform layer
+
+| Emitter | Events |
+| --- | --- |
+| [AI Connect](/architecture/ai-connect) | `ai_connect.execution_started`, `ai_connect.execution_completed`, `ai_connect.execution_failed`, `ai_connect.authority_violation`, `ai_connect.cost_limit_reached`, `ai_connect.agent_registered`, `ai_connect.routing_changed` |
+| [Plugin System](/architecture/plugin-system) | `plugin.registered`, `plugin.installed`, `plugin.configured`, `plugin.permission_granted`, `plugin.permission_violation`, `plugin.health_changed`, `plugin.suspended`, `plugin.uninstalled`, `plugin.version_changed` |
+
+An emitter MAY add events under its own namespace. Removing or renaming a declared event is a
+MAJOR change to that component's contract, because the name is what a historical query resolves
+against.
+
+## Required fields
+
+Every audit event MUST carry these, without exception — ES-5:
+
+| Field | Content |
+| --- | --- |
+| **Actor** | The identity that caused the event. A person, an API credential, or an agent acting on a person's behalf. |
+| **Organisation** | The tenant scope the event occurred within — Article 7. |
+| **Action** | What was attempted. |
+| **Target** | What it was attempted against. |
+| **Outcome** | What happened, including denial. |
+| **Timestamp** | When. |
+
+**Project** is required wherever the event occurs within a project, which is most engine events.
+The engine pages state it individually; it is not universal because framework publication, agent
+registration, and plugin lifecycle events are organisation-scoped rather than project-scoped.
+
+### Domain context
+
+Beyond the required fields, each emitter records the context that makes its events
+interpretable. These are stated on the emitting pages and are part of their contracts:
+
+| Emitter | Additional recorded context |
+| --- | --- |
+| Product Interview | Brief identity, outcome; refused completion records the uncovered areas |
+| Framework Engine | Framework identity and version; validation failure records the unmet sections |
+| Decision Engine | Brief version, library version, set state; `no_match` records the blocking brief elements |
+| Confidence Engine | Recommendation, score, scoring model version; `recomputed` records the prior score and evidence delta |
+| Decision Ledger | Ledger, decision, confidence at acceptance; `superseded` records both record identifiers |
+| Blueprint Engine | Blueprint version, ledger version, decisions consumed, state; failures record cause and offending elements |
+| Build Pipeline | Pipeline version, blueprint version, unit identifier; `build_unit.completed` records the completing identity and the review satisfied |
+| AI Connect | Capability, agent and contract version, model and provider plugin, cost |
+| Plugin System | Plugin identity and version, capability where applicable |
+
+Each of these exists for a reason worth preserving: a pattern of `recommendation.no_match` is
+the signal the framework library needs extending, and a pattern of
+`framework.validation_failed` on the same section is a signal about the standard rather than
+about one author. Domain context is what makes an audit log answer questions nobody thought to
+ask when it was written.
+
+## Attribution
+
+Where an event concerns generated content, the attribution AI-3 requires — agent identity and
+contract version, model and provider, invoking context, inputs referenced, timestamp — travels
+with the event.
+
+**Agent action is attributed to both the agent and the human whose action triggered it.** An
+execution's authority never exceeds that of the triggering user, so an audit record naming only
+the agent would lose the accountable party. Both are recorded.
+
+## Denials and failures are recorded
+
+Audit writes MUST NOT be conditional on the success of the operation they describe — ES-5.
+
+This is the requirement most easily lost in implementation, because the natural place to write
+an audit record is the success path. Three categories would disappear if it were:
+
+- **Authorisation denials.** Every refused authorisation emits an event — invariant 7 in
+  [Permissions](/product/permissions). A refused acceptance attempt is precisely the event worth
+  recording.
+- **Validation failures.** `framework.validation_failed`, `blueprint.compilation_failed`,
+  `pipeline.compilation_failed`, `ai_connect.execution_failed`.
+- **Refused operations.** A refused brief completion emits `brief.completed` with a denial
+  outcome and the uncovered areas.
+
+A log containing only successful actions describes a system that never refused anything, which
+is not the system being described.
+
+## Security events
+
+Some audit events are also security events. They are recorded in the audit log **and** raised
+for security attention:
+
+| Event | Raised because |
+| --- | --- |
+| `ai_connect.authority_violation` | An agent attempted an action outside its authority |
+| `plugin.permission_violation` | A plugin attempted a capability it was not granted |
+| Directive injection detected in agent context | Content attempted to alter authority limits, output schema, or retrieval scope — AI-10 |
+| Authorisation denial pattern | Repeated denials against one target |
+
+The first three are already declared by their emitting pages. The routing of security events —
+where they go, who is notified, what threshold triggers attention — is
+[incident response](/security/incident-response)'s concern, not this page's.
+
+## Integrity and immutability
+
+Audit events MUST be **append-only** — ES-5.
+
+The reasoning is the same one ES-1 applies to decision records: an immutability guarantee that
+depends on every code path remembering it will eventually be broken by a code path that forgot.
+An audit log the acting party can edit is not evidence of anything.
+
+Three properties follow, and they are requirements rather than implementation choices:
+
+- **No update path.** A written audit event has no field that can be modified.
+- **No delete path from application code.** Deletion MUST NOT be reachable from the application
+  layer.
+- **Correction by addition.** An event recorded in error is corrected by a subsequent event, not
+  by revising the original — the same supersession discipline the Decision Ledger uses.
+
+<Note>
+**Implementation-defined.** *How* append-only is enforced — storage-layer constraints,
+write-once media, cryptographic chaining, an external sink — is not specified by this repository
+and is deliberately left open. The requirement is that application code cannot alter or remove a
+written event. Any mechanism satisfying that is conforming.
+</Note>
+
+## Content prohibitions
+
+| MUST NOT appear | Source |
+| --- | --- |
+| Credentials, tokens, private keys | ES-7 — audit events are named explicitly |
+| Data from more than one organisation in a single event | Article 7, AI-4 |
+| Full artefact content where a reference suffices | See below |
+
+The third is a consequence rather than a stated rule. An audit event records *that* an artefact
+was read and *which version*; copying its content into the log duplicates the data under weaker
+access controls than the artefact itself carries. Events reference; they do not embed.
+
+## Access
+
+From the [permission matrix](/product/permissions):
+
+| Capability | Owner | Admin | Contributor | Viewer |
+| --- | --- | --- | --- | --- |
+| View audit log | Yes | Yes | No | No |
+| Export audit log | Yes | Yes | No | No |
+
+Audit access is an administrative capability. A Contributor can cause audit events and cannot
+read the log — which is the correct asymmetry: the parties whose actions are recorded are not
+the parties who review the recording.
+
+Every audit query is organisation-scoped before it executes — ES-2. Cross-organisation audit
+access is not a permission that exists, and MUST NOT be implementable as one.
+
+<Note>
+Reading the audit log is itself a mutating-adjacent action in the sense that matters for
+accountability, and whether audit reads and exports are themselves audited is
+[an open question](#open-questions) below. No current page requires it.
+</Note>
+
+## Retention
+
+**Not specified.** No page in this repository states a retention duration for audit events, and
+this page does not invent one.
+
+Two constraints on any future retention policy are, however, already implied:
+
+- **Decision records are permanent.** A record written under schema 1.2 must remain readable
+  indefinitely, and supersession never deletes. An audit trail that expired before the records
+  it describes would leave immutable decisions with no recoverable provenance.
+- **Frameworks may impose retention obligations.** A [Fintech](/frameworks/fintech) or
+  [Healthcare](/frameworks/healthcare) project may carry record-retention requirements that
+  exceed any DevOS baseline. Frameworks add obligations; they do not relax them — see
+  [Security overview](/security/overview).
+
+Setting a baseline duration is a governance decision, recorded through the
+[proposal process](/constitution/governance), not a documentation choice.
+
+## Requirements this page does not specify
+
+Stated plainly, because the absence is deliberate:
+
+| Not specified | Why |
+| --- | --- |
+| Storage technology or schema | No page specifies one. The requirements above constrain behaviour, not implementation. |
+| Transport or forwarding | No SIEM, sink, or pipeline is named anywhere in this repository. |
+| Retention duration | See above. A governance decision. |
+| Event payload serialisation | Field requirements are specified; encoding is not. |
+| Alerting thresholds | Belongs to [incident response](/security/incident-response) and `architecture/observability`. |
+
+## Acceptance criteria
+
+- Every mutating operation and every authorisation denial emits an audit event.
+- No audit write is conditional on the success of the operation it describes, verified by test.
+- Every event carries actor, organisation, action, target, outcome, and timestamp.
+- No code path can update or delete a written audit event.
+- No audit event contains a credential value.
+- No audit query can execute without an organisation scope, verified by test.
+- Every declared event name in the catalogue above is emitted by its declared emitter.
+- Agent-caused events attribute both the agent and the triggering human.
+
+## Open questions
+
+- Should audit reads and exports themselves be audited? Doing so is common practice; no current
+  page requires it, and it materially increases volume.
+- What is the baseline retention period, and does it differ for security events?
+- Should audit events be exportable in a machine-readable form an organisation can forward to
+  its own systems, and if so does that make export a plugin capability?
+- Where a Framework imposes a longer retention obligation, is that enforced by DevOS or recorded
+  as a project obligation the organisation satisfies?
+- Should the audit log be queryable by artefact — "show every event touching this decision
+  record" — or only by actor and time? The domain context recorded would support the former.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. Reconstructs the audit contract from ES-5 and the declared event catalogue. |

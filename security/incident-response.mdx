@@ -52,7 +52,8 @@ a signal, as noted in [Audit logging](/security/audit-logging).
 <Note>
 **Detection is specified; alerting is not.** ES-10 requires an alert on the failure mode that
 would harm a user most before a capability reaches Beta or Production, and points at
-`architecture/observability`, which is declared and unwritten. What threshold raises a security
+[Observability](/architecture/observability), which collects the signals to alert on and
+leaves thresholds open. What threshold raises a security
 event to human attention, and through what channel, is therefore **not specified**. This page
 does not invent one.
 </Note>
@@ -167,7 +168,7 @@ incidents. Frameworks add gates to a process; they never remove baseline ones â€
 | Escalation timelines | No page states a response window |
 | Notification obligations | No page states who must be told, or when |
 | On-call or ownership model | Not specified; an operational concern |
-| Alerting thresholds and channels | ES-10 requires alerts; `architecture/observability` is unwritten |
+| Alerting thresholds and channels | ES-10 requires an alert; thresholds and routing remain open in [Observability](/architecture/observability) |
 | Breach disclosure obligations | Jurisdiction- and Framework-specific; not a DevOS baseline |
 
 These are absences. Specifying them here would create requirements no other page supports, and

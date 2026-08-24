@@ -20,7 +20,7 @@ across all of them.
 
 | Layer | Question it answers | Where specified |
 | --- | --- | --- |
-| **Authentication** | Who is this? | `architecture/authentication` — unwritten |
+| **Authentication** | Who is this? | [Authentication](/architecture/authentication) |
 | **Authorisation** | May this identity perform this action here? | [Permissions](/product/permissions) |
 | **Entitlement** | Is this capability available to this organisation at all? | [Feature Registry](/product/feature-registry) — Planned |
 | **Agent authority** | What may this agent do, under its contract? | [Agent standard](/agents/agent-standard) |
@@ -262,8 +262,8 @@ The universal DevOS baseline is unchanged by any Framework. See
   currently say.
 - Should an organisation be able to narrow the Automatic band for its own projects, given that
   Frameworks may narrow it? Policy authored by whom, and recorded where?
-- Where is authentication specified? `architecture/authentication` is declared and unwritten,
-  and this page depends on it for identity establishment.
+- When a membership is revoked, what happens to executions already in flight under that
+  member's authority? Raised in [Authentication](/architecture/authentication).
 
 ## Version history
 

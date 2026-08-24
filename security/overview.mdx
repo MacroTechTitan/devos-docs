@@ -1,0 +1,208 @@
+---
+title: "Security overview"
+description: "The DevOS security baseline: the properties it guarantees, where each is specified, and how Frameworks extend it."
+---
+
+<Info>
+**Status: Planned.** The baseline is specified; enforcement is Prototype for identity and tenancy and Concept for the platform layer. This section states requirements. Where the repository requires a security property without specifying a mechanism, the requirement is stated and the mechanism left implementation-defined — each page says so explicitly.
+</Info>
+
+## Purpose
+
+DevOS security is not a subsystem. There is no security layer that other layers call: the
+properties below are structural, enforced where the data lives and where authority is resolved,
+and most of them are constitutional rather than architectural.
+
+This page states the baseline, points at the page that owns each property, and explains how
+Frameworks extend it without changing it.
+
+## The baseline
+
+Five properties. Each is stated absolutely somewhere in the Constitution, and each has a page in
+this section that elaborates it.
+
+| Property | Statement | Owner |
+| --- | --- | --- |
+| **Isolation** | Tenant isolation is absolute. Cross-organisation access is not a permission that exists. | [Data protection](/security/data-protection) |
+| **Bounded authority** | Every actor — human, credential, agent, plugin — acts within a declared boundary. Capability never confers authority. | [Access control](/security/access-control) |
+| **Evidence** | Every mutating operation and every denial is recorded, append-only. | [Audit logging](/security/audit-logging) |
+| **Credential confinement** | Credentials never reach source, logs, artefacts, or agent context. | [Secrets management](/security/secrets-management) |
+| **Containment** | An anomaly stops work rather than being compensated for. | [Incident response](/security/incident-response) |
+
+## Where security is enforced
+
+Security is enforced **beneath** the platform layer, not by it.
+
+The reason is stated in [System overview](/architecture/system-overview): a plugin is the least
+trusted component in the architecture, so the Plugin System cannot be the thing that guarantees
+tenant isolation. Isolation is a foundation property, and the platform layer operates within it.
+
+| Layer | Security responsibility |
+| --- | --- |
+| Product surface | Resolves identity and organisation scope once, before invoking anything |
+| Engine layer | **None of its own.** Engines perform no access control; they inherit the surface's authorisation |
+| Platform layer | Enforces agent authority limits and plugin permissions within the foundation's boundary |
+| Foundation | Tenancy, identity, immutability, audit — where the guarantees actually live |
+
+The second row is deliberate and easy to misread as an omission. Engines performing their own
+access control would mean seven implementations of the same check, and seven places for a
+tenant-isolation defect to appear. Scope is resolved once and carried; **no layer may widen it.**
+
+## The constitutional sources
+
+Security requirements are not concentrated in this section. They are distributed through the
+Constitution, and this section elaborates rather than originates them:
+
+| Source | Requirement |
+| --- | --- |
+| Article 4 | Humans accept; systems recommend |
+| Article 7 | Tenant isolation is absolute |
+| Article 8 | Agents operate under explicit contracts |
+| Article 9 | Prefer inspectable mechanisms |
+| ES-1 | Immutability enforced at the storage layer |
+| ES-2 | Tenant scoping is structural |
+| ES-5 | Every mutating operation is audited |
+| ES-7 | Secrets never in source or artefacts |
+| AI-1 to AI-12 | Agent contracts, authority, attribution, retrieval scope, untrusted input |
+
+Article 9 is worth calling out because it shapes the whole approach: where two mechanisms
+satisfy a requirement, DevOS prefers the one a reviewer can inspect. That preference is why
+authority is declared in contracts rather than inferred at runtime, and why the audit log is
+append-only rather than reconciled.
+
+## Security in agentic development
+
+The distinctive security problem DevOS addresses is that an execution agent is *capable* of far
+more than it is *authorised* to do. A worker with a shell can delete anything reachable; a
+worker with repository credentials can push anywhere.
+
+The governing rule is stated in [Access control](/security/access-control):
+
+> An execution agent does not gain authority because it is technically capable of an operation.
+
+Five boundaries implement it, each specified elsewhere:
+
+| Boundary | Control |
+| --- | --- |
+| **DevOS → AI Connect** | Engines submit capability requests; they do not select models, hold credentials, or construct provider calls |
+| **AI Connect → agent** | The prompt envelope carries scope, constraints, authority limits, and output schema. Context cannot alter them — AI-10 |
+| **Agent → tools and repository** | Actions inside the task boundary proceed; scope-widening, dependency, schema, auth, and deployment changes hit a review gate |
+| **Anything → secrets** | Credential custody sits with the Plugin System; rotation and disclosure are human-only |
+| **Proposal → repository** | A proposed outcome is never accepted without human approval |
+
+The last boundary is the containment property that matters most. Because an agent's work
+reaches the repository only through an approved outcome, an anomaly detected before approval has
+not reached anything. That is why the Build Run lifecycle treats pausing as a first-class state
+rather than an error path.
+
+<Note>
+**Not implemented.** AI Connect, the Plugin System, and Agentic Build Control are all at Concept
+or Planned status. Everything above is specified behaviour. This section does not claim any of
+it has shipped.
+</Note>
+
+## Security assets in the DevOS Library
+
+Security material splits cleanly along the boundary in
+[Artefact ownership](/library/ownership):
+
+| Reusable — Git-canonical Library assets | Project-specific or operational |
+| --- | --- |
+| **Standards** — this baseline and the pages in this section | An organisation's role assignments and entitlements |
+| **Processes** — security review, incident response, with their gates | An open incident and its evidence |
+| **Skills** — how to conduct a security review, handle a migration safely | A project's declared authority policy |
+| **Templates** — review checklists, configuration with placeholder keys | Live credential custody and rotation history |
+| **Agent contracts** — the [Security Reviewer](/agents/security-reviewer)'s authority limits | Execution sessions and their scopes |
+
+The left column is authored, reviewed, versioned, and forkable. The right column is operational
+state the application owns.
+
+Two consequences are worth stating. A reusable security asset **MUST NOT** contain credential
+values, environment-specific endpoints, or organisation-identifying content — it would fail the
+[publication gate](/library/asset-standard). And a project's own security policy is a project
+artefact, not a Library asset; where it proves general, it is *promoted* through governance
+rather than copied.
+
+**No security Library assets are published.** This section specifies the baseline; the skills,
+processes, and templates above are named as classes, not created as placeholders.
+
+## Frameworks extend the baseline
+
+A [Framework](/frameworks/overview) may impose security requirements the baseline does not. This
+is the supported route for domain and regulatory obligations, and it works without modifying the
+universal baseline.
+
+The composition rule follows the model the Framework Library already establishes:
+
+- **A Framework adds obligations.** It never removes or weakens a baseline one.
+- **Added obligations are attributed** to the Framework that contributed them, so a project can
+  show which requirement came from where.
+- **Conflicts are named, not resolved.** Where a contributed obligation contradicts the
+  baseline, the Framework names the conflict rather than silently overriding it.
+
+```text
+DevOS security baseline          (universal, unchanged)
+  + Framework-contributed obligations
+  + project-declared policy       (explicit)
+  = the security requirements this project actually carries
+```
+
+Every framework declares a **data and compliance profile** — one of the thirteen required
+sections — stating what data the class of system holds, its sensitivity, retention and residency
+obligations, and the regulatory regimes that apply. [Fintech](/frameworks/fintech) and
+[Healthcare](/frameworks/healthcare) are `constraint` frameworks whose entire purpose is
+contributing such obligations to a `shape` framework.
+
+The eight-framework model is unchanged by this section, and none of these pages is a Framework.
+
+## What this section does not specify
+
+Collected in one place, because the absences are deliberate and each is recorded as an open
+question on its page:
+
+| Not specified | Page |
+| --- | --- |
+| Encryption at rest and in transit, key management | [Data protection](/security/data-protection) |
+| Data classification scheme | [Data protection](/security/data-protection) |
+| Data residency | [Data protection](/security/data-protection) |
+| Retention durations, for any data class | [Data protection](/security/data-protection), [Audit logging](/security/audit-logging) |
+| Vault or key-manager technology | [Secrets management](/security/secrets-management) |
+| Rotation cadence | [Secrets management](/security/secrets-management) |
+| RBAC/ABAC implementation or permission schema | [Access control](/security/access-control) |
+| Severity model, escalation windows, notification | [Incident response](/security/incident-response) |
+| Alerting thresholds and channels | [Incident response](/security/incident-response) |
+| Audit storage, transport, or forwarding | [Audit logging](/security/audit-logging) |
+
+No vendor, product, protocol, or storage technology is named anywhere in this repository, and
+none is named here. Where a requirement exists without a mechanism, the requirement is stated
+and the mechanism left implementation-defined — any mechanism satisfying the requirement
+conforms.
+
+Several of these depend on `architecture/data-model`, `architecture/multi-tenancy`,
+`architecture/authentication`, and `architecture/observability`, all declared and unwritten.
+
+## Acceptance criteria
+
+- No data access interface exists that can be called without an organisation scope.
+- No role elevation produces cross-organisation access.
+- No engine performs its own access control.
+- No agent execution exceeds the authority of the triggering user.
+- No credential value appears in source, logs, error messages, audit events, artefacts, or agent
+  context.
+- Every mutating operation and every denial emits an append-only audit event.
+- No proposed repository outcome is accepted without human approval.
+- No Framework weakens a baseline security requirement.
+
+## Open questions
+
+- Should this section carry a threat model, or is the property-by-property baseline sufficient?
+- Where a Framework imposes an obligation DevOS cannot enforce — a notification window, for
+  instance — is that recorded as a project obligation, and by whom?
+- Should security requirements be machine-checkable, so a validation pack could assert them
+  against a project the way the framework publication gate asserts structure?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. States the five baseline properties, the enforcement model, Library integration, and Framework extension. |

@@ -1,0 +1,222 @@
+---
+title: "DevOS Library"
+description: "The reusable, versioned engineering assets that DevOS publishes in Git and exposes through the product UI."
+---
+
+<Info>
+**Status: Planned.** The DevOS Library is a product/platform capability and public repository convention. It does not change the canonical seven Core Engines.
+</Info>
+
+## Purpose
+
+DevOS is intended to be both a system people can **read** and a system people can **use**. The DevOS Library is the reusable layer that makes that possible.
+
+The Library organizes engineering assets that can be inspected and contributed in Git while also becoming selectable, installable, and executable from the future DevOS product UI.
+
+The ownership rule is:
+
+> **DevOS owns the system. AI Connect executes the system. Build skills teach agents how to operate inside the system.**
+
+This boundary prevents reusable knowledge, runtime execution logic, and project-specific implementation from being mixed together.
+
+## Canonical ownership
+
+| Layer | Canonical responsibility |
+| --- | --- |
+| **DevOS** | Frameworks, Feature Registry, requirements, architecture, decisions, blueprints, processes, standards, reusable templates, skills catalog, product/project state, and public specifications. |
+| **AI Connect** | Execution sessions, agent routing, worker adapters, event capture, tool execution, attribution, cost, and delivery of DevOS context/assets to execution agents. |
+| **Build skills** | Reusable procedural instructions for how an agent should plan, implement, validate, review, migrate, release, and recover work. |
+| **Project repositories** | Project-specific source code, tests, configuration, local feature records, overrides, and implementation documentation. |
+| **DevOS UI** | Human-facing views and controls over DevOS artefacts, Build Control, features, approvals, library assets, and operations. |
+
+An artefact SHOULD have one canonical owner even when it is rendered, cached, referenced, or executed in another layer.
+
+## Library asset classes
+
+The Library is intended to contain reusable assets such as:
+
+- Skills
+- Processes
+- Frameworks
+- Templates
+- Standards
+- Checklists
+- Policies
+- Prompts
+- Agent definitions
+- Workflows
+- Blueprint patterns
+- Reference architectures
+- Validation packs
+- Release packs
+
+Not every asset class requires a separate repository directory immediately. The public documentation establishes the ownership and lifecycle model before the implementation is widened.
+
+## Git and UI model
+
+Reusable DevOS knowledge SHOULD remain inspectable and versionable in Git. The DevOS UI should expose the same underlying assets rather than create a second unrelated source of truth.
+
+Conceptually:
+
+```text
+Git repository
+  ↓
+DevOS Library artefact
+  ↓
+DevOS UI
+  ↓
+Add to Project / Install / View Source / Fork
+  ↓
+AI Connect
+  ↓
+Execution agent
+```
+
+This gives developers two compatible consumption paths:
+
+```text
+GitHub user → inspect / copy / fork / contribute
+DevOS app user → select / install / add to project / execute
+```
+
+For reusable DevOS knowledge, Git is the source and the UI is the interaction layer. For live operational state such as Build Runs, approvals, costs, and execution events, the application data store may be authoritative and Git may receive exported artefacts where appropriate.
+
+## Skills
+
+Skills are reusable execution knowledge owned and catalogued by DevOS. AI Connect loads or delivers the applicable skills to execution agents.
+
+Examples may include:
+
+- standard software build workflow;
+- security review;
+- database migration;
+- feature completion;
+- documentation writing;
+- pull-request review;
+- incident response.
+
+A skill SHOULD contain procedural knowledge and reusable resources needed to perform a class of work. Canonical DevOS architecture, Framework specifications, Feature Registry rules, and Decision Ledger definitions should remain DevOS specifications and be referenced by skills rather than duplicated into them.
+
+### MTTBuild
+
+MTTBuild is the Macro Tech Titan standard software-build workflow skill. Its role is to encode repeatable build discipline such as preflight, sprint boundaries, migration safety, validation, review, deployment, rollback, and feature-completion behavior.
+
+MTTBuild is **not** the DevOS architecture and is **not** the canonical specification for individual product features. DevOS owns those definitions; MTTBuild consumes them while directing execution.
+
+## Processes
+
+Processes are reusable operational sequences owned by DevOS. Examples include:
+
+- New Product Process
+- Agentic Build Process
+- Feature Development Process
+- Architecture Review Process
+- Security Review Process
+- Database Migration Process
+- Release Process
+- Incident Response Process
+- Documentation Process
+
+Frameworks MAY extend a process with additional gates. A Fintech project, for example, may require compliance, audit, permission, and record-retention checks in addition to the baseline process.
+
+A process can be represented publicly in Git, selected in the DevOS UI, and executed through AI Connect without changing which layer owns it.
+
+## Documents and specifications
+
+Canonical DevOS documents belong in the DevOS documentation repository. The future UI should render and relate those documents to operational project state.
+
+For example:
+
+```text
+architecture/application-architecture.mdx
+  ↓
+DevOS UI → Architecture → Application Architecture
+  ↓
+Ask AI / Create Decision / Create Build Task / View Dependencies / View History
+```
+
+Important system knowledge should not exist only as opaque application state when a versioned public artefact is appropriate.
+
+## Feature Registry boundary
+
+The [Feature Registry](/product/feature-registry) belongs to DevOS because it defines product truth: what capabilities exist, their lifecycle, dependencies, completion obligations, and release eligibility.
+
+AI Connect consumes Feature Records and Feature Work Packets during execution. It does not become the canonical owner of feature truth.
+
+```text
+DevOS Feature Registry
+→ Feature Work Packet
+→ AI Connect
+→ execution agent
+→ completion evidence
+→ DevOS completion gate
+```
+
+## Build Control boundary
+
+[Agentic Build Control](/product/agentic-build-control) is the DevOS product experience for supervised agentic work. AI Connect provides the execution machinery underneath it.
+
+```text
+DevOS UI
+  Build Control
+  Build Queue
+  Approval Center
+  Run Inspector
+       ↓
+AI Connect
+  sessions
+  workers
+  events
+  logs
+  cost
+  tool calls
+```
+
+This separation allows DevOS to support replaceable workers without turning the user-facing product into a wrapper around one coding agent.
+
+## Future product navigation
+
+A future DevOS application may expose a structure such as:
+
+```text
+Workspace
+  Projects
+  Builds
+  Features
+  Architecture
+  Decisions
+  Blueprints
+
+Library
+  Skills
+  Processes
+  Frameworks
+  Templates
+  Agents
+
+Operations
+  Build Queue
+  Approvals
+  Deployments
+  Incidents
+
+Settings
+```
+
+This navigation is directional until the application architecture and design-system specifications make it normative.
+
+## Project overrides
+
+Projects may define local overrides and project-specific assets, but those overrides should remain explicit. Project-specific implementation belongs in the project repository; reusable improvements should be candidates for promotion back into the DevOS Library through normal review/governance.
+
+## Community model
+
+The Library is intended to make DevOS useful outside a hosted UI. Public assets can be reviewed, discussed, forked, and contributed through GitHub. The application can then provide a higher-level interface over the same concepts.
+
+This supports a community model in which developers can contribute skills, processes, templates, validation packs, Framework improvements, and other reusable engineering assets without requiring access to DevOS runtime internals.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 0.1 | 2026-08-21 | Initial public ownership and DevOS Library model. |

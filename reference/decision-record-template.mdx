@@ -1,0 +1,195 @@
+---
+title: "Decision record template"
+description: "A copyable template for a Decision Ledger record, conforming to the fields the ledger specification defines."
+---
+
+<Info>
+**Status: Reference.** This template reproduces the record schema specified in [Decision Ledger](/engines/decision-ledger), which governs. It adds no fields of its own. The Decision Ledger is at capability status **Prototype**, so the schema is settled while the storage implementation is not.
+</Info>
+
+## Purpose
+
+A decision record captures a choice a human accepted, in a form that remains
+interpretable when re-read a year later by someone who was not there.
+
+This page is the copyable form of that record. Every field below exists in the
+[Decision Ledger](/engines/decision-ledger) schema; nothing here is invented for
+the template's convenience.
+
+## Before you use this
+
+Two properties of the ledger shape how a record is written.
+
+**Records are immutable.** A record is never edited after acceptance. A decision
+that turns out to be wrong is *superseded* by a new record that points back at
+it. Write each field as a statement about the moment of acceptance, not as a
+description that will be kept current.
+
+**Acceptance is human.** No agent may create, alter, or accept a record —
+Article 4 in [Principles](/constitution/principles) and AI-2 in
+[AI standards](/constitution/ai-standards). An agent may draft the text below;
+the `accepted_by` field must name a person.
+
+## Template
+
+Copy the block below. Field names match the ledger schema exactly.
+
+```yaml
+# --- Identity -------------------------------------------------------------
+decision_id:            # immutable identifier
+ledger_id:              # exactly one ledger per project
+project_id:
+organisation_id:        # tenant scope — Article 7
+sequence:               # integer, monotonic within the ledger
+schema_version:         # e.g. "1.0"
+
+# --- Status ---------------------------------------------------------------
+status:                 # ACTIVE | SUPERSEDED | REJECTED | DEFERRED
+
+# --- Substance ------------------------------------------------------------
+context: |
+  # Required. What situation forced a choice. The constraints, the pressures,
+  # and what was unknown at the time. Written so a reader who was not present
+  # can reconstruct why a choice was necessary at all.
+
+decision: |
+  # Required. What was chosen, stated plainly and specifically enough that
+  # someone could tell whether an implementation conforms to it.
+
+alternatives:           # Required. MUST be non-empty.
+  - description: |
+      # An option genuinely considered.
+    rejection_reason: |
+      # Why it was not chosen. A rejection reason is required for every entry.
+
+consequences:           # Required.
+  - |
+    # What follows from this decision — including the costs and the things it
+    # now makes harder. A consequences list containing only benefits is a
+    # record that cannot be used to evaluate the decision later.
+
+# --- Evidence -------------------------------------------------------------
+confidence_at_acceptance:
+  score:                # 0.00 – 1.00
+  evidence:             # what supported the score
+  open_gaps:            # named gaps still open at acceptance — AI-6
+  scoring_model_version:
+
+# --- Origin and pinning ---------------------------------------------------
+recommendation_id:
+recommendation_set_id:
+framework_id:
+framework_version:      # pinned; never re-resolved to a later version
+
+# --- Acceptance -----------------------------------------------------------
+accepted_by:            # an identified human. Required for ACTIVE.
+accepted_at:            # timestamp. Immutable.
+
+# --- Status-conditional fields --------------------------------------------
+rejection_reason:       # Required when status is REJECTED
+deferral_gap_id:        # Required when status is DEFERRED
+
+# --- Supersession chain ---------------------------------------------------
+supersedes:             # decision_id this replaces, if any
+superseded_by:          # set when this record is later replaced
+supersession_rationale: # Required where `supersedes` is set
+```
+
+## Field notes
+
+### Alternatives must be non-empty
+
+The schema requires at least one alternative, each with a rejection reason. This
+is the field that makes a record useful rather than decorative.
+
+A record listing only what was chosen cannot answer the question most often
+asked of it later — *did anyone consider X?* — and a reader who cannot answer
+that will re-litigate the decision from scratch.
+
+An alternative invented after the fact to fill the field is worse than a thin
+record: it fabricates deliberation that did not happen.
+
+### Consequences include the costs
+
+A consequence is anything that follows, favourable or not. A decision that
+constrains future work should say so. This is the same discipline the
+[framework standard](/frameworks/framework-standard) applies when it refuses to
+publish a framework that documents only its strengths.
+
+### Confidence is recorded, not recomputed
+
+`confidence_at_acceptance` freezes what was known when the decision was made,
+including the gaps that were still open. It is not updated as evidence arrives
+later — that would rewrite history and destroy the ability to ask whether
+high-confidence decisions were in fact reversed less often.
+
+Recording open gaps at acceptance is required by AI-6: gaps are named, not
+smoothed over.
+
+### Framework version is pinned
+
+`framework_version` records the version the decision was made against. It is
+never re-resolved to a newer version. Deprecating a framework leaves every
+existing record untouched, and a pinned version that no longer resolves fails
+explicitly rather than falling back.
+
+### Supersession, not editing
+
+To change a decision, write a new record with `supersedes` set and a
+`supersession_rationale` explaining what changed. The original transitions to
+`SUPERSEDED` and remains permanently readable.
+
+The rationale field is where the actual learning lives. "Superseded by DEC-014"
+records the mechanics; *why the earlier reasoning stopped holding* is the part
+worth reading.
+
+## What this template deliberately omits
+
+The ledger schema has no field for these, and the template does not invent one:
+
+| Not a ledger field | Where it lives instead |
+| --- | --- |
+| **Dependencies between decisions** | The supersession chain records replacement, not dependency. Structural dependencies are compiled into the [blueprint](/engines/blueprint-engine). |
+| **Implementation status** | A decision is a choice, not a task. Delivery is tracked as build units and, when the [Feature Registry](/product/feature-registry) exists, as feature lifecycle state. |
+| **A separate rationale field** | Rationale is carried by `context`, `decision`, and the rejection reasons on each alternative. A fourth free-text field would duplicate them and drift. |
+| **Owner or reviewer** | `accepted_by` identifies the accepting human. Review roles are a [permissions](/product/permissions) concern. |
+| **Review or expiry date** | Records are immutable and do not expire. A decision that no longer holds is superseded, not lapsed. |
+
+Adding any of these to a local copy makes the record non-conforming. If one is
+genuinely needed, that is a change to the
+[ledger specification](/engines/decision-ledger) through
+[governance](/constitution/governance), not a template variation.
+
+## Traceability
+
+A record resolves in both directions, which is what makes the ledger auditable:
+
+```text
+Product Brief element
+  → recommendation  (recommendation_id, recommendation_set_id)
+  → framework       (framework_id, framework_version — pinned)
+  → decision record (this record)
+  → blueprint element
+  → build unit
+```
+
+Every element of a downstream artefact must attribute to a specific upstream
+element. An output element with no resolvable origin is a defect, not a warning.
+
+## Using this as a Library asset
+
+Under the [asset standard](/library/asset-standard) this is a **template**: it is
+instantiated into a project and the copy is thereafter owned by that project —
+see [Templates](/library/templates).
+
+The instantiation boundary applies with one caveat worth stating. A project may
+freely adapt the *presentation* of a record, but the **field set is fixed by the
+ledger specification**, not by this template. A ledger holding records with
+divergent field sets cannot be validated or queried consistently, which is why
+the omissions above are stated as prohibitions rather than preferences.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. Copyable template reproducing the Decision Ledger record schema. |

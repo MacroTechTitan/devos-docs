@@ -1,0 +1,272 @@
+---
+title: "Access control"
+description: "How authority is established and bounded across identity, roles, entitlements, agent contracts, execution scope, and human approval."
+---
+
+<Info>
+**Status: Planned.** The authority model is specified across several existing pages; this one reconciles them. Enforcement mechanisms are Prototype for identity and roles and Concept for everything in the platform layer. No RBAC or ABAC implementation is specified anywhere in this repository, and none is invented here.
+</Info>
+
+## Purpose
+
+DevOS constrains authority in six distinct ways, and they are frequently collapsed into one
+word. They are not interchangeable, they fail differently, and a control that satisfies one
+provides no assurance about another.
+
+This page states what each layer decides, where each is specified, and the rules that hold
+across all of them.
+
+## Six layers, six questions
+
+| Layer | Question it answers | Where specified |
+| --- | --- | --- |
+| **Authentication** | Who is this? | [Authentication](/architecture/authentication) |
+| **Authorisation** | May this identity perform this action here? | [Permissions](/product/permissions) |
+| **Entitlement** | Is this capability available to this organisation at all? | [Feature Registry](/product/feature-registry) — Planned |
+| **Agent authority** | What may this agent do, under its contract? | [Agent standard](/agents/agent-standard) |
+| **Execution scope** | What may this particular invocation reach? | [AI Connect](/architecture/ai-connect) |
+| **Human approval** | Has a person accepted this outcome? | Article 4, [Agentic Build Control](/product/agentic-build-control) |
+
+The distinctions that matter most in practice:
+
+**Entitlement is not authorisation.** An Owner has authority to use every capability their
+organisation has. Whether the organisation *has* a capability is a product question, resolved
+before authorisation is consulted. A denial for "not entitled" and a denial for "insufficient
+role" are different answers and should not be conflated in either the response or the audit
+record.
+
+**Agent authority is not the user's authority.** An agent has its own ceiling from its contract,
+and separately may never exceed the authority of the user whose action triggered it. Both bound
+the same invocation; the effective authority is the *intersection*, never the union.
+
+**Human approval is not an authorisation check.** Authorisation asks whether an action is
+permitted. Approval asks whether a specific outcome is accepted. A Contributor is authorised to
+accept decisions and must still actually accept each one — the permission does not pre-approve
+the acts it permits.
+
+## Authorisation: roles
+
+Four roles, specified in full in [Permissions](/product/permissions):
+
+| Role | Intent |
+| --- | --- |
+| **Owner** | Accountable for the organisation. Full capability, including billing and deletion. |
+| **Admin** | Administers members, frameworks, credentials, settings. No billing, no organisation deletion. |
+| **Contributor** | Performs design work, including accepting decisions. |
+| **Viewer** | Reads. Changes nothing. |
+
+A member holds exactly one role per organisation. Two design choices in that model are
+deliberate and are stated on the permissions page rather than here: Contributors accept
+decisions because acceptance is design work rather than an administrative act, and Admins cannot
+manage billing because billing is financial accountability held at the accountable role.
+
+<Note>
+**No RBAC or ABAC implementation is specified.** The model above is a role set with a capability
+matrix. Whether it is realised as role records, policy evaluation, attribute rules, or something
+else is implementation-defined. This page states the authority boundaries; it does not choose a
+mechanism.
+</Note>
+
+## Invariants
+
+These MUST hold under every code path. They are reproduced from
+[Permissions](/product/permissions) because they are the rules an attacker or a bug would target:
+
+1. **At least one Owner.** No path reduces an organisation to zero Owners.
+2. **No self-elevation.** A member cannot change their own role, in any direction.
+3. **No lateral escalation.** An Admin cannot grant Admin or Owner.
+4. **No cross-organisation permission.** Cross-organisation access is not a permission that
+   exists and MUST NOT be implementable as one — Article 7.
+5. **Credential scope ≤ creator's role.** A credential cannot exceed the capabilities of the
+   member who created it.
+6. **Immutable attribution.** Removing a member or reducing their role never alters decision
+   records they accepted.
+7. **Denials are audited.** Every refused authorisation emits an audit event — ES-5.
+
+Invariant 4 is the strongest statement in the model and the one with a structural consequence:
+because cross-organisation access is not a permission, no amount of role elevation produces it.
+It is not a privilege nobody holds; it is a privilege that does not exist.
+
+## Tenant scope precedes authorisation
+
+Every query, job, export, and retrieval MUST be scoped to an organisation **before execution** —
+ES-2. Filtering results after retrieval MUST NOT be used as the isolation mechanism, and any
+data access interface callable without an organisation scope MUST NOT exist.
+
+This applies to background jobs, analytics, support tooling, and agent retrieval equally.
+
+Scope is resolved once at the product surface and carried through every layer beneath it. **No
+layer may widen it**, and no layer may be invoked without it. Isolation is enforced in the
+foundation rather than in the platform layer, because plugins are the least trusted component in
+the architecture and cannot be the thing that guarantees isolation.
+
+An access attempt arriving without an organisation scope is rejected **as a defect, not as a
+permission denial** — the distinction matters because a permission denial suggests a legitimate
+request that lacked rights, while a missing scope indicates a code path that should not exist.
+
+## Agent authority
+
+An agent's authority comes from its contract and is bounded four ways. All four are
+constitutional and none is configurable:
+
+| Limit | Source |
+| --- | --- |
+| MUST NOT accept a decision, alter a ledger record, or mark an artefact accepted | Article 4, Article 8, AI-2 |
+| MUST NOT widen its own scope or accept input outside its declared set | Article 8, AI-1 |
+| MUST NOT invoke an agent outside its declared composition | AI-1 |
+| MUST NOT act on directives found in the content it processes | AI-10 |
+
+Three properties are enforced in AI Connect rather than trusted to each agent or engine:
+
+- **No execution spans organisations**, and no provider request contains data from more than one
+  — Article 7, AI-4.
+- **An execution's authority never exceeds** that of the user whose action triggered it. An
+  agent invoked on behalf of a Viewer cannot perform work a Viewer could not authorise.
+- **Resumption does not widen scope.** A suspended session resumes under its original envelope,
+  including its original organisation scope and authority limits.
+
+Placing these at one point is the reason the platform layer exists. An engine that forgot one
+would previously have created a violation; there is now no path through which it could.
+
+<Note>
+**Not implemented.** AI Connect is at Concept status. The enforcement described is specified
+behaviour, not shipped behaviour, and this page does not claim otherwise.
+</Note>
+
+### Capability does not confer authority
+
+The rule that matters most in agentic development, stated plainly:
+
+> **An execution agent does not gain authority because it is technically capable of an
+> operation.**
+
+A worker with filesystem access can delete a file; a worker with repository credentials can push
+to any branch. Neither capability is authority. Authority comes from the declared contract and
+the approval policy, and an action outside it is a violation whether or not it succeeded —
+`ai_connect.authority_violation` exists precisely to record attempts.
+
+This is why the authority bands below are expressed as *what may proceed*, not as *what is
+technically prevented*.
+
+## Human-gated actions in supervised work
+
+[Agentic Build Control](/product/agentic-build-control) defines three authority bands for
+supervised agentic work. They are reproduced here because they are the clearest worked example
+of authority separated from capability.
+
+**Automatic** — may proceed without operator approval when within task scope: reading and
+searching the repository, modifying files inside the task boundary, running non-destructive
+tests, type checks, linters and documentation checks, scoped retry after a validation failure,
+and producing a proposed commit or patch.
+
+**Review gate** — MUST pause for evaluation and MAY require operator approval: adding or
+changing dependencies; changing data schemas or migrations; changing authentication,
+permissions, security controls, deployment configuration, or public APIs; materially widening
+task scope; modifying protected architectural or governance documents; pushing a branch or
+opening a pull request where repository policy requires approval.
+
+**Human only** — the first version MUST NOT autonomously perform: merging to a protected or
+default branch; production deployment; destructive data migration; secret rotation or
+disclosure; billing or access-policy changes; deletion of production data; acceptance of a DevOS
+decision on behalf of a human.
+
+Two observations about that third band. Every entry is an action a competent worker could
+technically perform — which is the point. And the last entry is not a policy choice: it restates
+AI-2, which is not configurable, not overridable by a confidence threshold, and not bypassable
+in an automation context.
+
+## Non-human identities
+
+Two act without a person present at the moment of action:
+
+**API credentials.** Scope is bounded by the creating member's role and cannot exceed it, and
+cannot include write capabilities while the API is read-only — invariant 5. Creating, revoking,
+and rotating credentials are Owner/Admin capabilities.
+
+**Agents.** Bounded by contract and by the triggering user's authority. There is no path to
+direct agent invocation: agents are invoked by engines, not by users, and no user-facing agent
+console exists — a direct invocation path would bypass the artefact chain that gives agent
+output its meaning.
+
+**Plugins** are not identities. A plugin's permissions are declared in its manifest, granted at
+installation, and enforced outside the plugin. A plugin is the least trusted component in the
+architecture, and `plugin.permission_violation` records attempts beyond what was granted.
+
+## Denials
+
+Every refused authorisation emits an audit event — ES-5, invariant 7.
+
+A denial states that the action was refused. Whether it states *why* in detail is an
+[open question](#open-questions): a precise reason aids a legitimate user and informs an
+illegitimate one. What is not open is the audit record, which carries the full reason regardless
+of what the response says.
+
+The four denial-adjacent outcomes are distinct and should not be collapsed:
+
+| Outcome | Meaning |
+| --- | --- |
+| Not authenticated | Identity not established |
+| Not authorised | Identity established, role insufficient |
+| Not entitled | Capability unavailable to the organisation |
+| Missing organisation scope | A defect, not a denial — the call should not have been constructible |
+
+## Security assets in the DevOS Library
+
+Access control spans reusable material and project-specific state, and the boundary follows
+[Artefact ownership](/library/ownership):
+
+| Reusable — Library asset, Git-canonical | Project-specific or operational |
+| --- | --- |
+| This baseline and the standards it references | An organisation's role assignments |
+| A [security review skill](/library/skills) | A project's declared authority policy |
+| A [review-gate process](/library/processes) | Live entitlement state |
+| An agent contract's authority limits | Execution sessions and their scopes |
+| A permission-review [template](/library/templates) | Audit records of grants and denials |
+
+The left column is authored, reviewed, and versioned. The right column is operational and lives
+in the application. Publishing a role assignment as a Library asset would be a category error;
+so would treating a reusable review process as per-project configuration.
+
+## Frameworks may add, never relax
+
+A [Framework](/frameworks/overview) may impose additional access requirements. A
+[Fintech](/frameworks/fintech) or [Healthcare](/frameworks/healthcare) project may require
+segregation of duties, additional approval steps, or narrower default access than the baseline.
+
+The composition rule is the one the Framework Library already establishes: **a Framework adds
+obligations and never removes or weakens a baseline one.** Where a Framework-contributed
+requirement contradicts the baseline, it names the conflict rather than silently resolving it.
+
+The universal DevOS baseline is unchanged by any Framework. See
+[Security overview](/security/overview).
+
+## Acceptance criteria
+
+- No data access interface exists that can be called without an organisation scope.
+- No role elevation produces cross-organisation access, verified by test.
+- No member can change their own role, in any direction.
+- No API credential exceeds the capabilities of its creating member.
+- No agent execution exceeds the authority of the triggering user, verified by test.
+- No code path allows an agent to accept a decision or alter a ledger record.
+- Every refused authorisation emits an audit event carrying the full reason.
+- Removing a member alters no decision record they accepted.
+
+## Open questions
+
+- How much detail should a denial response carry? The audit record is complete regardless; the
+  user-facing message trades usability against disclosure.
+- Are entitlement denials distinguishable from authorisation denials in the user-facing
+  response, or only in audit?
+- Does a review-gate action require the approving human to hold a particular role, or is
+  operator identity sufficient? [Agentic Build Control](/product/agentic-build-control) does not
+  currently say.
+- Should an organisation be able to narrow the Automatic band for its own projects, given that
+  Frameworks may narrow it? Policy authored by whom, and recorded where?
+- When a membership is revoked, what happens to executions already in flight under that
+  member's authority? Raised in [Authentication](/architecture/authentication).
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. Reconciles the six authority layers and the invariants that hold across them. |

@@ -1,0 +1,288 @@
+---
+title: "Status definitions"
+description: "The status vocabularies used in this repository, what each one describes, and why they are not one enum."
+---
+
+<Info>
+**Status: Reference.** This page inventories vocabularies defined elsewhere. Each vocabulary's own specification governs; this page states scope and collects them in one place. The capability status vocabulary is reproduced from the normative [Terminology](/introduction/terminology) page.
+</Info>
+
+## Purpose
+
+Every capability page in this repository declares a status, and several
+specifications define their own state machines. This page says which vocabulary
+applies where, so a reader who sees `PUBLISHED` on one page and `AVAILABLE` on
+another knows they are not the same scale and were never meant to be compared.
+
+## There is no universal status enum
+
+DevOS uses **seven distinct status vocabularies**. They are not variants of one
+lifecycle, and merging them would destroy information rather than simplify it.
+
+The reason is that they answer different questions:
+
+| Vocabulary | Answers |
+| --- | --- |
+| Capability status | How far has *this DevOS capability* been built? |
+| Framework lifecycle | Can *this framework* be matched against a brief? |
+| Library asset lifecycle | Can *this asset* be selected and executed? |
+| Decision record status | Does *this decision* still govern the project? |
+| Feature lifecycle | Where is *this product feature* between proposal and retirement? |
+| Build Run lifecycle | What is *this supervised run* doing right now? |
+| AI Connect execution lifecycle | What is *this single agent invocation* doing right now? |
+
+A framework at `PUBLISHED` and a feature at `AVAILABLE` are both "done" in some
+sense, but one means "matchable by the Decision Engine" and the other means "all
+release gates passed". A single enum would have to pick one meaning and silently
+lose the other.
+
+<Note>
+Two vocabularies use the word **Planned** and they are unrelated. Capability
+status `Planned` means a DevOS capability is committed and scoped. Feature
+lifecycle `PLANNED` means a specific product feature is scheduled for
+development. Context disambiguates them; nothing else does.
+
+Capability statuses are written in prose case (`Planned`). Machine-valued states
+are written in upper snake case (`PLANNED`). Where a page uses the second form,
+it is naming a value a system stores.
+</Note>
+
+---
+
+## 1. Capability status
+
+**Scope:** every capability page in this repository.
+**Normative source:** [Terminology](/introduction/terminology).
+**Single source of truth for values:** the [documentation homepage](/).
+
+Every capability page declares exactly one of these. They describe how far the
+capability has been built, not how well specified it is.
+
+| Status | Meaning |
+| --- | --- |
+| **Concept** | Under design. No implementation exists. |
+| **Planned** | Committed and scoped. Implementation not started or early. |
+| **Prototype** | Working internal implementation. Unstable, unsupported. |
+| **Private beta** | Available to selected users. Behaviour may change with notice. |
+| **Beta** | Broadly available and stable enough to build on. Known gaps documented. |
+| **Production** | Generally available, supported, under change control. |
+
+This vocabulary is closed. **`Operational` is not a status** — it appears in this
+repository only as an adjective, as in "operational cost profile".
+
+### Reading a status honestly
+
+A status describes implementation, not documentation quality. A page can be a
+complete, rigorous specification and still declare **Concept**, because no code
+exists — [AI Connect](/architecture/ai-connect) and the
+[Plugin System](/architecture/plugin-system) are both in exactly that position.
+
+The inverse also holds: a **Prototype** capability has running code that may be
+less complete than its specification.
+
+Status is promoted only with linked evidence — a demo, a test run, or a release
+note. It is not advanced because a page was improved.
+
+---
+
+## 2. Framework lifecycle
+
+**Scope:** a framework version in the [Framework Library](/frameworks/overview).
+**Normative source:** [Framework Library](/frameworks/overview) and the
+[framework standard](/frameworks/framework-standard).
+
+This vocabulary answers one question: **may the Decision Engine match this
+framework against a brief?**
+
+| State | Matchable | Notes |
+| --- | --- | --- |
+| `DRAFT` | No | Being authored or adapted |
+| `VALIDATION_FAILED` | No | The unmet standard sections are named |
+| `VALIDATED` | No | Passed the standard, not yet published |
+| `PUBLISHED` | Yes | Available to matching for organisations that can see it |
+| `DEPRECATED` | No | Excluded from new matches; existing pinned references unaffected |
+
+A framework also carries a **capability status** in its Identity section. The two
+are independent: all eight reference frameworks currently declare capability
+status **Planned**, and none is `PUBLISHED`, so none may be matched yet.
+
+Deprecation never alters an existing recommendation, decision record, or
+blueprint. A decision made against version 1.2 continues to reference 1.2
+indefinitely.
+
+---
+
+## 3. Library asset lifecycle
+
+**Scope:** any [Library asset](/library/asset-standard) — skill, process,
+template, standard, checklist, policy, prompt, agent definition, validation pack.
+**Source:** [Reusable assets](/library/asset-standard). **Planned.**
+
+Deliberately the same five states as the framework lifecycle, with "matchable"
+generalised to "selectable":
+
+| State | Selectable | Notes |
+| --- | --- | --- |
+| `DRAFT` | No | Being authored or adapted |
+| `VALIDATION_FAILED` | No | The unmet requirements are named |
+| `VALIDATED` | No | Passed the standard, not yet published |
+| `PUBLISHED` | Yes | Available for selection and execution |
+| `DEPRECATED` | No | Excluded from new selection; existing pinned references unaffected |
+
+Reusing the framework lifecycle is intentional: one mental model, one set of
+states in the future UI, one deprecation story. **No asset in this repository is
+yet published against this standard**, so no asset currently holds one of these
+states.
+
+---
+
+## 4. Decision record status
+
+**Scope:** a record in the [Decision Ledger](/engines/decision-ledger).
+**Normative source:** [Decision Ledger](/engines/decision-ledger).
+
+This vocabulary answers: **does this decision still govern the project?**
+
+| Status | Governs | Readable | Editable |
+| --- | --- | --- | --- |
+| `ACTIVE` | Yes | Yes | No |
+| `SUPERSEDED` | No | Yes | No |
+| `REJECTED` | No | Yes | No |
+| `DEFERRED` | No | Yes | No |
+
+The "Editable" column is uniformly **No**, and that is the point. Records are
+immutable and the ledger is append-only: **no state transition deletes a
+record.** `SUPERSEDED` and `REJECTED` are terminal but permanently readable,
+because the record of a path not taken is part of why the system looks the way
+it does.
+
+Certain fields are required by status: `rejection_reason` for `REJECTED`,
+`deferral_gap_id` for `DEFERRED`, `accepted_by` and `accepted_at` for `ACTIVE`.
+See [Decision record template](/reference/decision-record-template).
+
+---
+
+## 5. Feature lifecycle
+
+**Scope:** a feature record in the [Feature Registry](/product/feature-registry).
+**Source:** [Feature Registry](/product/feature-registry). **Planned** — the
+Feature Registry is not implemented, and no feature currently holds one of these
+states.
+
+| State | Meaning |
+| --- | --- |
+| `PROPOSED` | Suggested, not yet accepted |
+| `APPROVED` | Accepted as something to build |
+| `PLANNED` | Scheduled for development |
+| `IN_DEVELOPMENT` | Being implemented |
+| `IMPLEMENTED` | Code exists |
+| `BETA` | Available to a limited audience |
+| `AVAILABLE` | All required release gates have passed |
+| `DEPRECATED` | Discouraged; still present |
+| `RETIRED` | Removed |
+
+**`IMPLEMENTED` and `AVAILABLE` are intentionally distinct.** Implementation
+means code exists. Availability means every required release gate passed. A
+feature can sit at `IMPLEMENTED` indefinitely with failing documentation,
+visibility, or changelog gates — that is the completion gate working, not a
+defect.
+
+This is the vocabulary most often confused with capability status. Note that
+`BETA` here describes one product feature's audience, while capability status
+**Beta** describes a whole DevOS capability's maturity.
+
+---
+
+## 6. Build Run lifecycle
+
+**Scope:** one supervised run in
+[Agentic Build Control](/product/agentic-build-control).
+**Source:** [Agentic Build Control](/product/agentic-build-control). **Planned** —
+no run has executed, and the public lifecycle is deliberately smaller than the
+internal AI Connect execution lifecycle.
+
+| State | Meaning |
+| --- | --- |
+| `QUEUED` | Created, not yet dispatched |
+| `RUNNING` | A worker is executing |
+| `PAUSED` | Halted by operator or policy; resumable |
+| `REVIEWING` | Worker reported completion; independent review in progress |
+| `REVISION_REQUIRED` | Review found a blocking issue; corrective instruction returns it to `RUNNING` |
+| `AWAITING_APPROVAL` | Validation and review passed; waiting on a human |
+| `COMPLETED` | Human approved the outcome |
+| `FAILED` | Unrecoverable execution failure |
+| `REJECTED` | Human rejected the outcome, or the operator stopped the run |
+
+Implementation adapters may expose more detailed internal states, but the product
+surface normalises them into this set.
+
+The two transitions that matter most are the ones a human owns:
+`AWAITING_APPROVAL → COMPLETED` and `AWAITING_APPROVAL → REJECTED`. No agent may
+perform either — Article 4 and AI-2.
+
+---
+
+## 7. AI Connect execution lifecycle
+
+**Scope:** one agent execution session inside
+[AI Connect](/architecture/ai-connect).
+**Normative source:** [AI Connect](/architecture/ai-connect).
+
+This vocabulary answers: **what is this single invocation doing, and may its result be used?**
+
+| State | Result envelope returned | Consumable by engine |
+| --- | --- | --- |
+| `ROUTING` | No | No |
+| `ENVELOPED` | No | No |
+| `EXECUTING` | No | No |
+| `VALIDATING` | No | No |
+| `SUSPENDED` | No | No — resumable under the original envelope |
+| `COMPLETED` | Yes | Yes |
+| `FAILED` | Yes, with failure cause | No |
+| `REJECTED` | Yes, with failure cause | No |
+| `EXPIRED` | Yes, with failure cause | No |
+
+The second and third columns differ on purpose. A `FAILED` execution **does** return an
+envelope — stating the failure — but that envelope is not consumable as content. It MUST NOT
+carry approximated output or a simpler substituted task — AI-9.
+
+This is the finest-grained of the seven vocabularies and the shortest-lived: a session is one
+invocation, not a unit of work a person tracks. It is easily confused with the
+[Build Run lifecycle](#6-build-run-lifecycle), which is deliberately coarser — a Build Run is
+supervised by an operator and may span many executions.
+
+Note that `COMPLETED`, `FAILED`, and `REJECTED` appear in both vocabularies with different
+scopes. A Build Run at `RUNNING` may contain an execution at `FAILED`.
+
+---
+
+## Choosing the right vocabulary
+
+| If you are describing… | Use |
+| --- | --- |
+| A DevOS capability on a documentation page | Capability status |
+| Whether a framework can be matched | Framework lifecycle |
+| Whether a Library asset can be selected | Library asset lifecycle |
+| Whether a decision still governs | Decision record status |
+| Where a product feature sits | Feature lifecycle |
+| What a supervised run is doing | Build Run lifecycle |
+| What one agent invocation is doing | AI Connect execution lifecycle |
+
+A page that needs two of these states both, in separate fields, with their
+vocabularies named. It does not blend them into a single "status" field, because
+the reader cannot then tell which scale a value belongs to.
+
+## Requirement language
+
+Status vocabularies are frequently read alongside RFC 2119 keywords. Those are
+defined normatively in [Terminology](/introduction/terminology): **MUST** /
+**MUST NOT** is an absolute requirement, **SHOULD** / **SHOULD NOT** a strong
+recommendation whose deviation requires a recorded reason, and **MAY** is
+genuinely optional.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. Inventories the status vocabularies, their scopes, and why they are not unified. |
+| 1.1 | 2026-08-23 | Added the AI Connect execution lifecycle, omitted from 1.0. Seven vocabularies, not six. |

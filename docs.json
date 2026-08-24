@@ -66,7 +66,20 @@
           "product/project-lifecycle",
           "product/customer-workspace",
           "product/admin-workspace",
-          "product/permissions"
+          "product/permissions",
+          "product/agentic-build-control",
+          "product/feature-registry"
+        ]
+      },
+      {
+        "group": "DevOS Library",
+        "pages": [
+          "library/overview",
+          "library/ownership",
+          "library/asset-standard",
+          "library/skills",
+          "library/processes",
+          "library/templates"
         ]
       },
       {

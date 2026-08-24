@@ -1,0 +1,203 @@
+---
+title: "Incident response"
+description: "What counts as a security incident in DevOS, what the system already detects, and the response obligations that follow."
+---
+
+<Info>
+**Status: Planned.** Detection signals are specified by the pages that emit them; the response process is not specified by any current page and is stated here as requirements rather than as an implemented procedure. No escalation timeline, severity matrix, or notification obligation is invented.
+</Info>
+
+## Purpose
+
+Several DevOS components already detect and record conditions that are security events. None
+states what happens next. This page defines what an incident is, collects the signals the system
+already produces, and states the response obligations that follow from existing requirements.
+
+## What counts as an incident
+
+An incident is a security event, or a pattern of events, indicating that a boundary this
+repository declares absolute may have been crossed.
+
+Four boundaries are stated in absolute terms, and a suspected breach of any is an incident by
+construction:
+
+| Boundary | Source |
+| --- | --- |
+| Tenant isolation | Article 7 — cross-organisation access is not a permission that exists |
+| Agent authority | Article 8, AI-1, AI-2 — agents never accept decisions or widen scope |
+| Record immutability | ES-1, ES-5 — decisions and audit events cannot be altered |
+| Credential confinement | ES-7 — credentials never reach source, logs, artefacts, or agent context |
+
+A failure that does not touch one of these may still be an operational incident; it is not
+necessarily a *security* incident. The distinction matters because it determines who is
+notified and what evidence must be preserved.
+
+## Signals the system already produces
+
+These are declared by their emitting pages, not defined here:
+
+| Signal | Emitter | Indicates |
+| --- | --- | --- |
+| `ai_connect.authority_violation` | [AI Connect](/architecture/ai-connect) | An agent attempted an action outside its authority |
+| `plugin.permission_violation` | [Plugin System](/architecture/plugin-system) | A plugin attempted a capability it was not granted |
+| Directive injection detected | AI Connect | Context attempted to alter authority limits, output schema, or retrieval scope — AI-10 |
+| Authorisation denial | Every component | A refused authorisation — ES-5, invariant 7 |
+| `ai_connect.cost_limit_reached` | AI Connect | An execution refused on cost grounds |
+| `plugin.suspended` / `plugin.health_changed` | Plugin System | A plugin removed from service or degraded |
+
+The first three are explicitly security events as well as audit events. The fourth is not
+individually an incident — denials are normal — but a *pattern* of denials against one target is
+a signal, as noted in [Audit logging](/security/audit-logging).
+
+<Note>
+**Detection is specified; alerting is not.** ES-10 requires an alert on the failure mode that
+would harm a user most before a capability reaches Beta or Production, and points at
+[Observability](/architecture/observability), which collects the signals to alert on and
+leaves thresholds open. What threshold raises a security
+event to human attention, and through what channel, is therefore **not specified**. This page
+does not invent one.
+</Note>
+
+## Response obligations
+
+Four obligations follow from requirements already stated elsewhere. They are the parts of
+incident response this repository already determines.
+
+### 1. Preserve the record
+
+Audit events are append-only and MUST NOT be altered — ES-5. This holds during an incident,
+which is when the pressure to tidy the record is highest.
+
+Correction is by addition. An event recorded in error is corrected by a subsequent event, never
+by revising the original. Incident findings are additions to the record, not edits of it.
+
+### 2. Rotate before remediating
+
+A suspected credential exposure obliges rotation **first** — ES-7. Removing a secret from a file
+without rotating it MUST NOT be treated as a fix.
+
+This ordering is stated constitutionally and is the single most commonly inverted step in
+practice, because deleting the line feels like the fix and rotation feels like follow-up.
+
+### 3. Revert rather than fix forward
+
+Where an incident originates in a deployed change, reverting is the first move. This is the
+discipline [MTTBuild](/library/skills) encodes as a build-workflow skill, and it applies with
+more force under security pressure: a fix authored during an incident is authored by people who
+do not yet know what happened.
+
+Reverting restores a known state and preserves the ability to investigate the change that caused
+the problem.
+
+### 4. Contain without widening authority
+
+An incident does not create authority. The human-only band in
+[Agentic Build Control](/product/agentic-build-control) — production deployment, destructive
+migration, secret rotation, access-policy changes — does not relax because an incident is in
+progress. Nor does AI-2's prohibition on agents accepting decisions.
+
+An emergency that requires actions outside declared authority requires a **human with that
+authority**, not a temporary elevation of an agent's. Capability does not confer authority, and
+an incident is exactly when that principle is most likely to be argued away.
+
+## Agentic execution incidents
+
+Supervised agentic work introduces incident classes conventional systems do not have. Each maps
+to an existing control:
+
+| Condition | Existing control | Response |
+| --- | --- | --- |
+| Agent attempts an action outside its authority | AI-1, enforced in AI Connect | Execution terminated; security event recorded |
+| Directive injection in retrieved content | AI-10 | Directive ignored; security event recorded |
+| Agent widened a build unit's scope | Review gate | Run paused; scope change requires evaluation |
+| Worker touched files outside the task boundary | Task scope | Review gate; the proposed change is not accepted |
+| Composition exceeded its declared depth or cost bound | AI Connect | Composition terminated |
+
+The pattern across all five is that **the run stops and a human evaluates**. Supervised agentic
+work is designed so that the response to an anomaly is pausing rather than compensating, which
+is why the Build Run lifecycle has `PAUSED` and `REVISION_REQUIRED` as first-class states.
+
+A proposed repository outcome is never accepted without human approval, so an incident detected
+before approval has not yet reached the repository. That is the containment property the
+approval gate provides.
+
+## Evidence
+
+An investigation draws on material the system already retains:
+
+| Source | Provides |
+| --- | --- |
+| [Audit log](/security/audit-logging) | Actor, organisation, action, target, outcome, timestamp — append-only |
+| Attribution — AI-3 | Agent, contract version, model, provider, inputs referenced |
+| Execution records | Session state, envelope, cost, failure cause |
+| Build Run timeline | Normalised worker activity within a supervised run |
+| [Decision Ledger](/engines/decision-ledger) | What was accepted, by whom, and when |
+
+Attribution is what makes generated content traceable to a specific agent, contract version, and
+model — which is the difference between "an agent produced this" and an answerable question.
+
+## Reusable versus operational
+
+| Reusable — Library asset, Git-canonical | Operational, not in Git |
+| --- | --- |
+| An incident response [process](/library/processes) with its stages and gates | An open incident and its state |
+| An incident response [skill](/library/skills) | Evidence collected during investigation |
+| A post-incident review [template](/library/templates) | A completed incident record |
+| This baseline | An organisation's contact and escalation configuration |
+
+The [Library overview](/library/overview) already names Incident Response as a candidate
+process. This page states the requirements such a process must satisfy; the process itself is
+not authored, and no placeholder asset is created for it.
+
+## Frameworks may add, never relax
+
+A [Framework](/frameworks/overview) may impose incident obligations the baseline does not:
+regulatory notification, defined response windows, mandated post-incident reporting, or evidence
+retention beyond any DevOS default.
+
+[Fintech](/frameworks/fintech) and [Healthcare](/frameworks/healthcare) are the obvious cases,
+and both already declare failure modes and abandonment conditions that bear on operational
+incidents. Frameworks add gates to a process; they never remove baseline ones — see
+[Processes](/library/processes).
+
+## What is deliberately not specified
+
+| Not specified | Why |
+| --- | --- |
+| Severity classification | No page defines severity tiers |
+| Escalation timelines | No page states a response window |
+| Notification obligations | No page states who must be told, or when |
+| On-call or ownership model | Not specified; an operational concern |
+| Alerting thresholds and channels | ES-10 requires an alert; thresholds and routing remain open in [Observability](/architecture/observability) |
+| Breach disclosure obligations | Jurisdiction- and Framework-specific; not a DevOS baseline |
+
+These are absences. Specifying them here would create requirements no other page supports, and
+several — notification and disclosure in particular — are governance and legal decisions rather
+than documentation ones.
+
+## Acceptance criteria
+
+- Audit records are not altered during or after an incident.
+- A suspected credential exposure triggers rotation before any other remediation.
+- No incident grants an agent authority it does not hold under its contract.
+- No incident bypasses the human-only band or AI-2.
+- Every authority violation and permission violation is recorded as both an audit and a security
+  event.
+- An agentic anomaly pauses the run rather than being compensated for automatically.
+
+## Open questions
+
+- What severity model applies, and does it differ for tenant-isolation suspicions versus
+  operational failures?
+- What threshold of authorisation denials constitutes a pattern worth raising?
+- Who is notified on a security event, through what channel, and within what window?
+- Should an incident be recordable as a first-class object with its own lifecycle, or is the
+  audit log plus a post-incident document sufficient?
+- Where a Framework imposes a notification obligation, does DevOS enforce it or record it as an
+  organisation obligation?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. Defines incident scope, collects existing detection signals, and states the four response obligations already determined. |

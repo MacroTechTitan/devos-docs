@@ -1,0 +1,205 @@
+---
+title: "Data protection"
+description: "What DevOS holds, the isolation and immutability properties that protect it, and which mechanisms are deliberately left open."
+---
+
+<Info>
+**Status: Planned.** The protection *properties* are constitutional and complete. The *mechanisms* — encryption, residency, classification scheme, retention durations — are not specified by any current page and are deliberately left implementation-defined rather than invented here.
+</Info>
+
+## Purpose
+
+Protecting data starts with knowing what is held. DevOS holds an unusual mix: design artefacts
+that are permanent by construction, tenant data that must never mix, and credentials it did not
+issue.
+
+This page states what DevOS holds, the properties that protect it, and — explicitly — where the
+repository specifies a requirement without specifying a mechanism.
+
+## What DevOS holds
+
+DevOS declines to host or operate customer systems. Operational ownership of customer workloads
+is stated as out of scope in [Mission](/constitution/mission), and that boundary determines the
+data profile: **DevOS holds descriptions of systems, not the systems.**
+
+| Held | Nature | Notes |
+| --- | --- | --- |
+| Product briefs | Business intent, users, constraints, compliance obligations | Often commercially sensitive before launch |
+| Recommendations and confidence scores | Derived analysis | Includes named evidence gaps |
+| Decision records | Immutable, permanent | Cannot be deleted — see below |
+| Blueprints and build units | Implementation plans, prompts | Describe systems not yet built |
+| Frameworks and adaptations | Reference architectures | Adaptations encode how one organisation builds |
+| Members and roles | Identity and authority | |
+| Audit events | Evidence | Append-only |
+| Execution sessions, results, cost | Operational telemetry | AI Connect |
+| Provider credentials | Not DevOS's own | Custody sits with the Plugin System |
+
+**Not held:** customer source code, customer production data, and customer end-user data. DevOS
+produces specifications and prompts; owning the code is treated as a different product, and code
+generation and repository ownership are explicitly deferred.
+
+<Note>
+Two entries carry sensitivity that is easy to underestimate.
+
+A **product brief** describes an unlaunched product's intent, market, and constraints. It is
+frequently the most commercially sensitive artefact in a project and is created at the very
+start, before anyone has thought about access.
+
+A **framework adaptation** encodes how one organisation builds. Article 7 makes it invisible to
+every other organisation, and the framework standard separately prohibits adaptations from
+containing client-identifying or project-specific content — because an adaptation derived from
+one client's work would otherwise carry their context into another client's project.
+</Note>
+
+## Isolation
+
+**Tenant isolation is absolute** — Article 7. It is the strongest property in the model and the
+one with the most consequences.
+
+Every query, job, export, and retrieval MUST be scoped to an organisation before execution —
+ES-2. Filtering after retrieval MUST NOT be the isolation mechanism, and any data access
+interface callable without an organisation scope MUST NOT exist. This applies to background
+jobs, analytics, support tooling, and agent retrieval equally.
+
+Three consequences reach beyond storage:
+
+- **No cross-organisation permission exists.** It is not a privilege nobody holds; it is a
+  privilege that cannot be implemented — invariant 4 in
+  [Access control](/security/access-control).
+- **No provider request contains data from more than one organisation** — AI-4. Isolation
+  extends past DevOS's own boundary into what is transmitted to model providers.
+- **Isolation is a foundation property.** Neither AI Connect nor the Plugin System implements its
+  own isolation model; both operate within the boundary the foundation enforces. A plugin is the
+  least trusted component in the architecture and cannot be what guarantees isolation.
+
+A call arriving without an organisation scope is rejected **as a defect, not a permission
+denial**.
+
+## Immutability
+
+Two classes of data cannot be changed once written, and both are enforced below the application
+layer rather than by convention.
+
+**Decision records** — ES-1. Substantive fields of an accepted record MUST NOT be updatable.
+Supersession is insertion plus a pointer, never an update. **Deletion MUST NOT be reachable from
+application code.** A record written under schema 1.2 must remain readable indefinitely.
+
+**Audit events** — ES-5. Append-only, with correction by addition rather than revision. See
+[Audit logging](/security/audit-logging).
+
+The rationale ES-1 gives applies to both: an immutability guarantee that depends on every code
+path remembering it will eventually be broken by a code path that forgot.
+
+### Immutability constrains deletion
+
+This is the tension worth naming rather than glossing.
+
+A decision record cannot be deleted, and removing a member never alters records they accepted —
+invariant 6. Attribution is permanent by design, because a ledger whose authorship could be
+edited would not be evidence of anything.
+
+An organisation-level deletion right therefore interacts with a construction that forbids
+deleting the records in question. Owners hold organisation deletion as a capability; how that
+reconciles with per-record immutability is **not specified by any current page**, and this page
+does not resolve it. It is recorded as an open question rather than answered with an invented
+policy.
+
+## Data in transit to providers
+
+Model providers receive artefact content as agent context. Three constraints already apply:
+
+- **One organisation per request** — AI-4.
+- **Retrieval scope is fixed during envelope assembly**, before any retrieval executes, so no
+  engine can construct a cross-organisation context.
+- **No credentials in envelopes** — ES-7.
+
+A fourth is a Framework concern rather than a baseline one: some compliance obligations
+constrain whether model execution may happen outside an organisation's boundary at all. The
+[AI Agent framework](/frameworks/ai-agent) records this as an applicability consideration —
+obligations attaching to data leaving the organisation for processing constrain where execution
+may occur. The DevOS baseline states the isolation requirement; a Framework may add a residency
+obligation on top.
+
+## What is deliberately not specified
+
+The repository states protection *requirements* without stating *mechanisms*. That gap is real
+and is left open rather than filled:
+
+| Requirement stated | Mechanism not specified |
+| --- | --- |
+| Data is isolated per organisation | Storage partitioning, row-level policy, or separate stores |
+| Decision records and audit events are immutable | Storage-layer constraints, write-once media, cryptographic chaining |
+| Credentials are never exposed | Custody technology — see [Secrets management](/security/secrets-management) |
+| — | **Encryption at rest and in transit.** No page states an algorithm, key length, or key management model. |
+| — | **Data classification scheme.** No page defines sensitivity tiers for DevOS's own data. |
+| — | **Residency.** No page states where data may be stored or processed. |
+| — | **Retention and deletion.** No page states a duration for any data class. |
+
+<Note>
+The last four are absences, not oversights I am filling. Encryption, classification, residency,
+and retention are all things this repository will eventually need to state, and stating them here
+would create normative requirements no other page supports — which is precisely the drift the
+[status vocabulary](/reference/status-definitions) exists to prevent.
+
+Each appears as an open question below. The correct route to specifying them is the
+[proposal process](/constitution/governance), and the natural home for the storage-side answers
+is [Data model](/architecture/data-model) and [Multi-tenancy](/architecture/multi-tenancy).
+The modelling half of the deletion and retention questions is addressed there; encryption,
+classification, and residency remain open.
+</Note>
+
+## Reusable versus operational
+
+| Reusable — Library asset, Git-canonical | Operational or project-specific |
+| --- | --- |
+| This baseline and the properties it states | An organisation's actual data |
+| A data-handling [skill](/library/skills) | A project's residency obligations |
+| A [process](/library/processes) with data-handling gates | Live retention state |
+| A framework's data and compliance profile | Adaptation content belonging to one organisation |
+
+A framework's *data and compliance profile* is reusable; an *adaptation* carrying one
+organisation's judgement is not shared, by Article 7.
+
+## Frameworks may add, never relax
+
+Every framework declares a **data and compliance profile** — one of the thirteen required
+sections. It states what data that class of system holds, its sensitivity, retention and
+residency obligations, and the regulatory regimes that typically apply.
+
+[Fintech](/frameworks/fintech) and [Healthcare](/frameworks/healthcare) are `constraint`
+frameworks whose entire purpose is contributing data-handling and regulatory constraints to a
+`shape` framework. That is the supported mechanism for imposing stricter data protection: a
+Framework adds obligations, names conflicts rather than resolving them, and never weakens the
+baseline.
+
+Where a framework cannot determine an obligation without the brief, it records an evidence gap
+rather than assuming a default.
+
+## Acceptance criteria
+
+- No data access interface exists that can be called without an organisation scope.
+- No query, job, export, or agent retrieval crosses an organisation boundary, verified by test.
+- No provider request contains data from more than one organisation.
+- Substantive fields of an accepted decision record are not updatable, enforced below the
+  application layer.
+- Deletion of an accepted decision record is not reachable from application code.
+- Removing a member alters no record they accepted.
+- No artefact contains a credential value.
+
+## Open questions
+
+- What encryption is required at rest and in transit, and what key management model?
+- Does DevOS need a data classification scheme for its own artefacts, given that briefs and
+  adaptations carry materially different sensitivity from blueprints?
+- What residency guarantees, if any, does the baseline make — particularly for data transmitted
+  to model providers?
+- What retention applies to each data class, and how does organisation deletion reconcile with
+  the immutability of decision records and audit events?
+- Should an organisation be able to export everything it holds, and does export inherit the same
+  isolation guarantees as retrieval?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. States the data profile, isolation and immutability properties, and the mechanisms left implementation-defined. |

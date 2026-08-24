@@ -1,0 +1,209 @@
+---
+title: "Authentication"
+description: "How identity is established, the trust boundaries it creates, and why establishing identity decides nothing else."
+---
+
+<Info>
+**Status: Concept.** Identity establishment is required by several pages and specified by none. This page states the requirements and the trust boundaries. **No identity provider, protocol, token format, or session mechanism is named**, because none is named anywhere in this repository.
+</Info>
+
+## Purpose
+
+[Access control](/security/access-control) records an open question: *where is authentication
+specified?* This page answers it, within the limits the repository supports.
+
+Authentication answers exactly one question — **who is this?** — and answering it settles
+nothing else. Four other layers decide what follows, and conflating any of them with identity is
+how a system ends up granting authority because a caller was recognised.
+
+## What authentication is not
+
+| Layer | Question | Decided by |
+| --- | --- | --- |
+| **Authentication** | Who is this? | This page |
+| Authorisation | May this identity perform this action here? | [Permissions](/product/permissions) |
+| Entitlement | Is this capability available to this organisation at all? | [Feature Registry](/product/feature-registry) — Planned |
+| Agent authority | What may this agent do under its contract? | [Agent standard](/agents/agent-standard) |
+| Human approval | Has a person accepted this outcome? | Article 4 |
+
+The separation is not pedantry. A recognised identity with no role performs nothing; an
+entitlement absent from an organisation cannot be authorised into existence; and an agent acting
+on a recognised user's behalf is bounded by its contract *and* by that user's authority, not by
+recognition.
+
+Authentication establishes **who**. Everything else establishes **what**.
+
+## Identities
+
+Three kinds of identity exist, and they are established differently.
+
+### User accounts
+
+A person. A user account may belong to **several organisations, holding a different role in
+each**, and roles never span organisations.
+
+This is the property that makes authentication and authorisation genuinely separable here:
+authenticating a user tells you nothing about which organisation's data they may reach. That is
+resolved afterwards, per organisation, from membership.
+
+### API credentials
+
+A non-human identity acting without a person present.
+
+| Property | Rule |
+| --- | --- |
+| Scope | Cannot exceed the capabilities of the creating member — invariant 5 |
+| Write access | Cannot include write capabilities while the API is read-only |
+| Creation, revocation, rotation | Owner and Admin only |
+| Recorded fields | `credential_id`, `organisation_id`, `scope`, `created_by`, `last_used_at`, `revoked_at` |
+
+The scope ceiling is what stops credential creation becoming a privilege-escalation path: an
+Admin cannot mint a credential that does what only an Owner may do.
+
+### Agents
+
+An agent is **not** an authenticated identity in the sense above. It has no credentials of its
+own and cannot initiate a session.
+
+An agent acts within an execution triggered by a user action, and its authority is the
+intersection of its contract and the triggering user's authority. There is no path to direct
+agent invocation — agents are invoked by engines, never by users, and no user-facing agent
+console exists.
+
+Attribution nonetheless records both: agent-caused audit events name the agent *and* the
+triggering human, because an audit record naming only the agent would lose the accountable
+party.
+
+<Note>
+**Plugins are not identities either.** A plugin's permissions are declared in its manifest,
+granted at installation, and enforced outside the plugin. A plugin is the least trusted
+component in the architecture.
+</Note>
+
+## Trust boundaries
+
+Identity crosses four boundaries, and each has a rule already stated elsewhere.
+
+```text
+External identity provider          ← a plugin capability; least trusted
+        ↓  establishes
+User account identity               ← DevOS-held
+        ↓  resolved per organisation
+Membership and role                 ← authorisation begins here
+        ↓  carried, never widened
+Engine invocation                   ← organisation scope fixed
+        ↓  enveloped by AI Connect
+Agent execution                     ← authority ≤ triggering user
+```
+
+| Boundary | Rule |
+| --- | --- |
+| Provider → DevOS | Identity providers are an **Authentication plugin class**. A plugin is the least trusted component; identity assertions from one are validated, not trusted |
+| Identity → authorisation | Roles are resolved **per organisation**. No cross-organisation permission exists and MUST NOT be implementable — invariant 4 |
+| Surface → engine | Organisation scope is resolved **once at the surface** and carried through every layer. No layer may widen it, and no layer may be invoked without it |
+| Engine → agent | An execution's authority never exceeds that of the user whose action triggered it. Resumption does not widen scope |
+
+The third row is the load-bearing one. Because scope is resolved once and carried, authentication
+happens at exactly one place in the request path, and no downstream component re-derives identity
+or can broaden what it was given.
+
+## Identity providers are plugins
+
+Sign-in to an organisation is served by the **Authentication plugin class** — one of the six
+classes the [Plugin System](/architecture/plugin-system) defines.
+
+Three consequences follow, and all are already normative:
+
+- **Providers are replaceable.** Plugins within a class are interchangeable at the routing layer,
+  so an organisation changing provider is a plugin change rather than a DevOS change.
+- **Credentials sit with the Plugin System**, resolved at call time. No engine, agent, artefact,
+  prompt, log, or audit event contains one — ES-7.
+- **Registration and installation are separate.** A provider plugin is registered once,
+  platform-wide; it is installed per organisation with that organisation's configuration.
+
+**No provider or protocol is named**, and naming one would be inventing canon. The requirement is
+the plugin boundary, not a particular implementation behind it.
+
+## Session properties
+
+The repository does not specify a session mechanism. It does constrain what any mechanism must
+preserve:
+
+| Property | Source |
+| --- | --- |
+| Scope resolved once, carried, never widened | Article 7, ES-2 |
+| Authority ceiling: an execution never exceeds the triggering user's authority | [AI Connect](/architecture/ai-connect) |
+| Resumption does not widen scope — a suspended session resumes under its original envelope | [AI Connect](/architecture/ai-connect) |
+| A resumption attempted after its window has elapsed is refused; a new execution is required | [AI Connect](/architecture/ai-connect) |
+| Every authentication failure and authorisation denial is audited | ES-5 |
+| No self-elevation: a member cannot change their own role, in any direction | Invariant 2 |
+
+The resumption rules are the most specific session statements the repository makes, and they
+concern *execution* sessions rather than user sessions. That asymmetry is real: AI Connect's
+session model is specified; a user session model is not.
+
+<Note>
+**Not specified.** Session lifetime, renewal, revocation propagation, multi-factor requirements,
+and token format are absent from this repository. They are recorded as open questions rather than
+invented here.
+</Note>
+
+## Denials
+
+Four outcomes are distinct and MUST NOT be collapsed, because each indicates a different
+condition:
+
+| Outcome | Meaning |
+| --- | --- |
+| **Not authenticated** | Identity not established |
+| **Not authorised** | Identity established, role insufficient |
+| **Not entitled** | Capability unavailable to the organisation |
+| **Missing organisation scope** | A **defect**, not a denial — the call should not have been constructible |
+
+The fourth is the one worth care in implementation. A missing scope is not a legitimate request
+that lacked rights; it indicates a code path that ES-2 says must not exist, and reporting it as a
+permission denial would hide a structural fault behind a routine message.
+
+Every refused authorisation emits an audit event carrying the full reason, whatever the
+user-facing response says — ES-5, invariant 7.
+
+## Reusable versus operational
+
+| Git-canonical | Operational |
+| --- | --- |
+| This baseline; authentication requirements | User accounts and their identities |
+| A provider-integration [skill](/library/skills) | Memberships, roles, invitations |
+| An access-review [process](/library/processes) | API credentials and their scopes |
+| Plugin manifest requirements | Sessions and execution envelopes |
+
+Identity data is operational without exception. Nothing in this section is Git-backed.
+
+## Acceptance criteria
+
+- Identity is established once per request path; no downstream layer re-derives it.
+- Roles are resolved per organisation; no role assignment spans organisations.
+- No API credential exceeds the capabilities of its creating member.
+- No agent initiates an execution; every execution has a triggering user.
+- No execution's authority exceeds that of its triggering user, verified by test.
+- A resumed session operates under its original envelope, including its original scope.
+- Every authentication failure and authorisation denial emits an audit event.
+- No credential value appears in any log, artefact, envelope, or audit event.
+
+## Open questions
+
+- What session lifetime, renewal, and revocation-propagation behaviour does the baseline
+  require? None is specified.
+- Are multi-factor or step-up requirements part of the baseline, or a Framework-contributed
+  obligation?
+- When a membership is revoked, what happens to executions already in flight under that
+  member's authority?
+- Should authentication events — sign-in, sign-out, provider change — be audit events? ES-5
+  covers mutating operations and denials; a successful sign-in is neither.
+- Does a user account exist independently of any organisation, or only as the subject of
+  memberships? [Data model](/architecture/data-model) leaves this open.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-24 | Initial page. Separates identity establishment from authority, states trust boundaries and session properties. |

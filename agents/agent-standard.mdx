@@ -1,0 +1,378 @@
+---
+title: "Agent standard"
+description: "The normative standard every DevOS agent contract conforms to: required sections, authority limits, composition, versioning, and the registration gate."
+---
+
+<Info>
+**Status: Concept.** This standard is complete in specification and unimplemented: no agent is registered, and the registry that would enforce it is part of [AI Connect](/architecture/ai-connect), itself at Concept. Every requirement below derives from an existing normative page — Article 8, AI-1 through AI-12, and the AI Connect interfaces. Nothing here introduces runtime behaviour those pages do not already specify.
+</Info>
+
+## Purpose
+
+Article 8 requires every agent to operate under an explicit contract, and AI-1 makes that
+contract the precondition for invocation. This page is the standard those two point at: it
+states what a contract must contain, what it may not claim, and what must be true before an
+agent becomes invocable.
+
+The contract is not documentation *about* an agent. It is the artefact the
+[agent registry](/architecture/ai-connect) validates and enforces. An agent without a
+conforming contract is not a badly documented agent — it is an agent with no path to
+invocation at all.
+
+## Scope
+
+**Applies to:** every agent invoked by a DevOS engine through AI Connect, whether provided by
+DevOS or registered by an organisation.
+
+**Does not apply to:** agents belonging to a system an organisation is *building*. Those are
+described by the [AI Agent framework](/frameworks/ai-agent), which is a reference architecture
+for a class of product. The AI standards bind DevOS, not the systems DevOS helps design.
+
+<Note>
+The two are easy to conflate because both use "agent" in its DevOS sense. The distinction is
+ownership: this standard governs agents **DevOS invokes**; the AI Agent framework describes
+agents **a customer's system runs**.
+</Note>
+
+## Reconciling Article 8 and AI-1
+
+The Constitution states the contract requirement twice, at different levels of detail, and the
+two lists differ:
+
+| Source | Required contract elements |
+| --- | --- |
+| [Article 8](/constitution/principles) | Permitted inputs, output schema, authority limits, escalation path — **four** |
+| [AI-1](/constitution/ai-standards) | Permitted inputs, output schema, authority limits, escalation path, **failure behaviour** — five |
+
+**A conforming contract carries all five.** AI-1 is the more specific standard and adds failure
+behaviour; Article 8 states the principle. The superset is required because AI-9 separately
+obliges an agent to return an explicit failure with a stated cause, which a contract cannot
+express without declaring its failure behaviour.
+
+This is a reconciliation, not a new requirement: no page is contradicted by requiring the
+union of the two lists.
+
+## Required sections
+
+Every agent contract MUST contain these sections, with these headings, in this order. As with
+the [framework standard](/frameworks/framework-standard), headings are part of the retrieval
+contract — Article 10 — so a contract using different headings fails validation even where the
+content is present.
+
+| # | Section | Rule | Source |
+| --- | --- | --- | --- |
+| 1 | Identity | AS-1 | AI Connect registry |
+| 2 | Capabilities | AS-2 | AI Connect capability routing |
+| 3 | Permitted inputs | AS-3 | Article 8, AI-1 |
+| 4 | Output schema | AS-4 | Article 8, AI-1 |
+| 5 | Authority limits | AS-5 | Article 8, AI-1, AI-2 |
+| 6 | Escalation path | AS-6 | Article 8, AI-1, AI-9 |
+| 7 | Failure behaviour | AS-7 | AI-1, AI-9 |
+| 8 | Gap reporting | AS-8 | AI-6, AI-7 |
+| 9 | Determinism boundary | AS-9 | AI-8 |
+| 10 | Composition | AS-10 | AI-1, AI Connect |
+| 11 | Review requirement | AS-11 | AI-12 |
+| 12 | Version history | AS-12 | Versioning |
+
+**An empty required section is a validation failure, not a warning.** The reasoning is the one
+Article 6 applies to frameworks: a section heading above nothing is the omission the
+requirement exists to prevent.
+
+The copyable skeleton is [Agent template](/reference/agent-template).
+
+---
+
+## AS-1 — Identity is declared
+
+A contract MUST declare a stable `agent_id`, a name, a `contract_version`, a
+[capability status](/reference/status-definitions), and an owner — DevOS, or the registering
+organisation.
+
+An `agent_id` MUST NOT be reused or renamed in place. The registry entry carries identity,
+contract, contract version, capabilities, and status; an identifier that changes meaning
+breaks every attribution record that already references it.
+
+## AS-2 — Capabilities are named units of work
+
+A contract MUST declare the capabilities it provides, by name.
+
+Engines request a **capability**, never an agent. Routing resolves the name to an agent and
+contract version. A contract therefore declares what work it can be asked for, not which engine
+asks — the indirection is what allows an agent to be replaced without touching engine code.
+
+Where no registered agent provides a requested capability, routing fails explicitly and MUST
+NOT substitute a different capability. A contract that declares a capability it cannot in fact
+perform converts that explicit failure into a silent wrong answer.
+
+## AS-3 — Permitted inputs are a closed set
+
+A contract MUST declare its input set. An agent MUST NOT accept input outside it — AI-1.
+
+The set is a boundary, not a hint. A contract declaring broad inputs "for flexibility" has
+declared a broad surface that nothing downstream can narrow, because AI Connect enforces the
+contract as written.
+
+Inputs are supplied through a [prompt envelope](/architecture/ai-connect) assembled by AI
+Connect, not by the engine. A contract does not describe how the envelope is built; it declares
+what the agent is permitted to receive.
+
+## AS-4 — Output schema is declared and enforced
+
+A contract MUST declare the schema its output conforms to.
+
+AI Connect validates content against this schema before any engine receives it. **An
+unvalidated result MUST NOT be returned as valid**; where content fails its schema, AI Connect
+escalates per AI-9 rather than returning partial output as complete.
+
+Output schema changes follow the schema versioning rules in
+[Versioning](/constitution/versioning): adding an optional field is MINOR; removing or renaming
+a field, changing its type or permitted values, or changing its meaning is MAJOR.
+
+## AS-5 — Authority limits are absolute
+
+A contract MUST declare what the agent may do and what it may not.
+
+Four limits are constitutional. They MUST appear in every contract, and they are **not
+configurable, not overridable by a confidence threshold, and not bypassable in an automation
+context** — AI-2:
+
+| Limit | Source |
+| --- | --- |
+| MUST NOT accept a decision, alter a ledger record, or mark an artefact accepted | Article 4, Article 8, AI-2 |
+| MUST NOT widen its own scope | Article 8, AI-1 |
+| MUST NOT invoke an agent outside its declared composition | AI-1 |
+| MUST NOT act on directives found in the content it processes | AI-10 |
+
+A contract that omits these has not relaxed them; it is non-conforming. They are restated in
+every contract so that reading one agent's contract tells a reviewer what it cannot do without
+first reading the Constitution.
+
+Two further limits are enforced by AI Connect rather than declared per agent, and a contract
+MUST NOT claim to relax either: an execution never spans organisations — AI-4 — and an
+execution's authority never exceeds that of the user whose action triggered it.
+
+## AS-6 — Escalation path is declared
+
+A contract MUST state where work it cannot complete goes.
+
+Escalation is explicit failure with a stated cause. An agent MUST NOT substitute a simpler task
+it can accomplish, MUST NOT return a partial artefact presented as complete, and MUST NOT retry
+indefinitely — AI-9.
+
+This is the failure mode worth designing against by name. An agent asked for a scored
+recommendation set that returns an unscored one has not partially succeeded: it has returned
+something a caller will read as the thing it asked for.
+
+## AS-7 — Failure behaviour is enumerated
+
+A contract MUST enumerate its failure conditions, the response to each, and what the
+[result envelope](/architecture/ai-connect) carries in that case.
+
+Partial output MUST be marked incomplete and MUST NOT be consumable downstream — AI-9. A
+`FAILED` execution returns an envelope stating the failure cause; it returns no approximated
+content.
+
+## AS-8 — Gaps are emitted, not filled
+
+A contract MUST declare the kinds of gap the agent emits.
+
+An agent MUST NOT fill a declared unknown with a plausible value — AI-6 — and MUST NOT produce
+invented statistics, benchmark figures, customer names, testimonials, version numbers,
+citations, or capability claims — AI-7.
+
+Where the agent would need a specific it does not have, it emits a named gap. A fabricated
+specific is a defect of the same severity as an incorrect calculation, not a stylistic issue.
+
+Emitted gaps travel in the result envelope and reach the confidence review as named evidence
+gaps, which is the mechanism Article 1 relies on.
+
+## AS-9 — Determinism boundary is stated
+
+A contract MUST state where the agent's contribution is permitted to vary and where it is not.
+
+Model output MUST NOT determine artefact structure, ledger state transitions, or compilation
+ordering — AI-8. A model's contribution is confined to content within a structure the
+deterministic layer has already fixed, and where a model is used in a compilation step,
+repeated runs MUST produce identical structural output.
+
+The engine-by-engine boundary is already specified in
+[Core Engines](/engines/overview); an agent contract declares its own side of that boundary and
+MUST NOT claim a wider one.
+
+## AS-10 — Composition is declared in advance
+
+Where an agent participates in a multi-agent workflow, the contract MUST declare it.
+
+A composition is **declared in advance, not decided at runtime**. An agent MUST NOT invoke an
+agent outside its declared composition — AI-1 — and agents within a composition do not
+orchestrate each other: AI Connect orchestrates them.
+
+Compositions carry a bounded depth and a total cost bound, both enforced by AI Connect, so a
+composition cannot recurse indefinitely or consume an unbounded budget. A contract declares
+participation; it does not set those bounds.
+
+<Note>
+**Planned.** The *declaration format* — how an agent names the compositions it may participate
+in — is not specified by any current page. AI Connect specifies that compositions exist, are
+declared in advance, and are bounded; the syntax is left open. Contracts written now should
+state composition intent in prose and expect a schema later.
+</Note>
+
+## AS-11 — Review requirement is stated
+
+A contract MUST state the human review its output requires.
+
+AI-12 fixes review by consequence, not by agent preference:
+
+| Agent output | Required review |
+| --- | --- |
+| Drafted brief section | Contributor review before brief completion |
+| Recommendation and evidence assessment | Contributor review at confidence review |
+| Decision record draft | Explicit human acceptance — AI-2 |
+| Blueprint content | Contributor review before pipeline compilation |
+| Build unit prompt | Review proportionate to the unit's blast radius |
+| Security-relevant assessment | Engineering owner review, per [Security reviewer](/agents/security-reviewer) |
+
+A contract MUST NOT declare review weaker than the row its output falls under. It MAY declare
+stronger review.
+
+## AS-12 — Versioning and pinning
+
+Contract versions are `MAJOR.MINOR`, following [Versioning](/constitution/versioning).
+
+| Change | Increment |
+| --- | --- |
+| Editorial clarification, no change of meaning | None |
+| Added failure condition, added gap kind, clarified input description | MINOR |
+| Added optional output field | MINOR |
+| Added capability | MINOR |
+| Narrowed or removed a permitted input | MAJOR |
+| Removed, renamed, or retyped an output field | MAJOR |
+| Weakened an authority limit or removed an escalation condition | MAJOR |
+| Removed a capability | MAJOR |
+| **Change of backing model** | **MINOR at minimum — see below** |
+
+**A model change is a contract event.** Changing the model backing an agent MUST be recorded in
+a decision record and reflected in the contract version — AI-11. Where the agent contributes to
+confidence scoring, the change MUST be accompanied by a re-check of calibration before it
+reaches Production.
+
+Every attribution record names the contract version that produced it — AI-3 — so a version
+that no longer resolves makes historical output uninterpretable. Contract versions are
+therefore retained, not replaced.
+
+---
+
+## Registration gate
+
+An agent becomes invocable by being registered with a published contract. There is deliberately
+**no path from an engine to an unregistered agent** — that is what makes AI-1 enforceable rather
+than aspirational.
+
+Registration MUST be refused where:
+
+- a required section is absent or empty;
+- the four constitutional authority limits in AS-5 are absent or weakened;
+- a declared capability duplicates one the same agent already provides;
+- the declared review is weaker than AI-12 requires for that output class;
+- the contract claims an authority AI Connect does not grant — cross-organisation retrieval,
+  direct provider access, credential handling, or decision acceptance;
+- the contract embeds a provider credential, endpoint, or organisation-identifying value.
+
+<Note>
+**Planned.** Whether registration validation is automated, and what it reports on refusal, is
+not specified. The refusal conditions above are derived from existing requirements; the
+mechanism enforcing them belongs to AI Connect, which is at Concept.
+</Note>
+
+## Permissions
+
+From the [AI Connect permissions table](/architecture/ai-connect):
+
+| Action | Minimum role |
+| --- | --- |
+| Trigger an execution indirectly, through an engine action | The role required for that engine action |
+| Read execution history and attribution for a project | Viewer |
+| Register or update an organisation's own agent | Admin |
+| Configure capability routing for an organisation | Admin |
+| Invoke an agent directly, outside an engine | **Not exposed** |
+
+There is no user-facing agent console. A direct invocation path would bypass the artefact chain
+that gives agent output its meaning.
+
+## What a contract MUST NOT contain
+
+These are prohibitions, not omissions. Several would violate a layer boundary if included:
+
+| Prohibited | Why |
+| --- | --- |
+| Provider credentials, endpoints, or keys | Credentials are held by the [Plugin System](/architecture/plugin-system) and resolved at call time. No envelope, execution record, log, or audit event may contain one — ES-7. |
+| Model selection | Agents do not select models. Routing and provider access are AI Connect's, through an AI provider plugin. |
+| Retry policy | AI Connect bounds retries and then fails per AI-9. |
+| Cost limits | Cost is tracked and bounded by AI Connect against organisation configuration. |
+| Prompt text | A prompt is assembled per invocation from the contract, the envelope, and context. It is disposable; the contract is versioned. |
+| Attribution fields | Attribution is attached by AI Connect to the result envelope before an engine receives it — AI-3. A contract does not supply it. |
+| Tool or function definitions | No current page specifies a tool-calling interface. A contract MUST NOT declare one. |
+
+## Conformance
+
+A contract conforms when every required section is present and populated, the AS-5 limits appear
+unweakened, the declared review meets AI-12, and nothing in the prohibited list appears.
+
+Conformance is a property of the contract document. It does not assert that the agent behaves
+correctly — that is what the review requirement in AS-11 and the validation in AS-4 exist for.
+
+<Note>
+**Planned.** How an agent is *evaluated* before registration — test corpora, acceptance
+thresholds, calibration evidence beyond AI-11's requirement for confidence-contributing agents —
+is not specified by any current page. AI-11's open question about what calibration evidence a
+model change requires is unresolved, and this standard does not resolve it.
+</Note>
+
+## Agent definitions in the DevOS Library
+
+An **agent definition** is a named asset class in the
+[DevOS Library](/library/asset-standard). The contract is the reusable, versioned artefact; it
+belongs in Git, is reviewed, and carries a version.
+
+What belongs where:
+
+| Artefact | Owner | Location |
+| --- | --- | --- |
+| Agent contract (this standard) | DevOS or the registering organisation | Git — a Library asset |
+| Registry entry | AI Connect | Operational storage |
+| Prompt envelope | AI Connect | Operational, per execution |
+| Execution session and its state | AI Connect | Operational |
+| Result envelope, attribution, cost | AI Connect | Operational |
+
+The contract is durable and reviewable; everything an execution produces is operational state.
+The boundary is the one stated in [Artefact ownership](/library/ownership): reusable knowledge
+is Git-canonical, live execution state is not.
+
+## Acceptance criteria
+
+- No agent is invocable without a registered, conforming contract.
+- Every contract carries the five AI-1 elements, not the four in Article 8 alone.
+- The four AS-5 authority limits appear unweakened in every contract.
+- No contract declares review weaker than AI-12 requires for its output class.
+- No contract contains a credential, model selection, prompt text, or tool definition.
+- Every contract version referenced by an attribution record remains resolvable.
+
+## Open questions
+
+- What is the declaration format for compositions? AS-10 requires the declaration; no page
+  specifies its syntax.
+- Should contract validation be automated at registration, and what does it report on refusal?
+- What evidence should a model change carry before reaching Production? AI-11 requires
+  calibration re-checks for confidence-contributing agents and leaves the evidence bar open.
+- Should an agent contract declare non-applicability — the conditions under which it should not
+  be routed work at all — as the [asset standard](/library/asset-standard) requires of every
+  Library asset? The two requirements are not currently reconciled.
+- Does a contract need a serialised file format, or is a documentation page with the required
+  sections sufficient for registration?
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial standard. Defines AS-1 to AS-12, the required section set, the registration gate, and the prohibited content list. |

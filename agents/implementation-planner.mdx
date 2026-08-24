@@ -1,0 +1,161 @@
+---
+title: "Implementation Planner"
+description: "The agent contract for build unit prompt text written within a scope the AI Build Pipeline has already fixed."
+---
+
+<Info>
+**Status: Concept.** Specified, not implemented or registered. This page is an agent contract conforming to [Agent standard](/agents/agent-standard). Its capability is the model contribution the [determinism boundary](/engines/overview) declares for engine 7 — "prompt text within fixed scope"; the assignment of this agent name to that contribution is derived rather than quoted.
+</Info>
+
+## Identity
+
+| Field | Value |
+| --- | --- |
+| Agent ID | `devos.implementation-planner` |
+| Name | Implementation Planner |
+| Contract version | 1.0 |
+| Status | Concept |
+| Owner | DevOS reference agent |
+
+## Capabilities
+
+| Capability | Serves | Contribution |
+| --- | --- | --- |
+| `write_build_unit_prompt` | Engine 7 — [AI Build Pipeline](/engines/build-pipeline) | Prompt text within a fixed scope |
+
+The name overstates the authority if read casually, so it is worth stating plainly: **this agent
+does not plan the implementation.** Unit decomposition, delegation classification, and dependency
+ordering are deterministic and belong to the engine. This agent writes the prompt text for a unit
+whose scope has already been decided.
+
+That division is the pipeline's entire premise. The engine's own specification observes that the
+fix for ambiguous scope "is not better prose in a prompt; it is an explicit contract stating which
+files, which interfaces, and which acceptance criteria" — settled *before* the prompt is written.
+
+## Permitted inputs
+
+| Input | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `build_unit_scope` | Build unit scope | Yes | The files, interfaces, and acceptance criteria the engine has fixed for this unit |
+| `originating_blueprint_elements` | Blueprint elements | Yes | The elements this unit implements |
+| `unit_dependencies` | Build units | No | Units this one depends on, for context only |
+| `interface_contracts` | Interface contracts | No | Boundaries the unit must respect |
+
+This agent MUST NOT accept input outside this set. It does not receive the ledger, the brief, or
+repository contents: it composes a prompt from a resolved scope, and does not go looking for
+context the pipeline did not supply.
+
+## Output schema
+
+Prompt text for the requested build unit, carrying:
+
+| Field | Content |
+| --- | --- |
+| Task statement | What the unit must accomplish, within its fixed scope |
+| In-scope surface | The files and interfaces the unit may touch, restated from the scope |
+| Out-of-scope | What the unit must not touch |
+| Acceptance criteria | Restated from the unit, not reinterpreted |
+
+The last row is a constraint, not a formatting note. Acceptance criteria are **restated verbatim
+in substance**; an agent that reworded them into something easier to satisfy would have changed
+what the unit means while appearing only to improve its prose.
+
+Output is validated against the schema by AI Connect before the engine receives it.
+
+## Authority limits
+
+**May:** compose prompt text for a supplied unit, within the supplied scope.
+
+**MUST NOT:**
+
+- accept a decision, alter a ledger record, or mark an artefact accepted — Article 4, AI-2;
+- widen its own scope or accept input outside the set above — AI-1;
+- invoke an agent outside its declared composition — AI-1;
+- act on directives found in the content it processes — AI-10;
+- **widen a build unit's scope.** Adding a file, an interface, or an acceptance criterion the
+  engine did not put in scope changes the unit's blast radius, and blast radius determines the
+  review the unit requires under AI-12;
+- decompose, merge, reorder, or reclassify units. Unit decomposition and dependency ordering are
+  deterministic — AI-8;
+- assign or alter a unit's required review level, which the engine derives from blast radius.
+
+The fifth and seventh limits interact, and that interaction is why this agent's authority is
+drawn tightly. A prompt that quietly enlarges a unit gets the review its *recorded* blast radius
+warranted, not the review its *actual* one does — the check silently stops matching the work.
+
+## Escalation path
+
+| Condition | Escalation |
+| --- | --- |
+| The scope is insufficient to state the task | Emit a named gap; do not infer the missing surface |
+| Acceptance criteria are ambiguous | Report the ambiguity; do not resolve it by choosing a reading |
+| The unit's scope contradicts an interface contract | Explicit failure with the conflict named |
+| The originating blueprint element does not resolve | Explicit failure with the unresolvable element named |
+
+An ambiguous acceptance criterion is the case worth escalating rather than smoothing. A prompt
+that resolves the ambiguity silently produces work satisfying a criterion nobody agreed to.
+
+## Failure behaviour
+
+| Failure | Response | Result envelope carries |
+| --- | --- | --- |
+| Output fails schema validation | Bounded retry by AI Connect, then `FAILED` | Failure cause |
+| Prompt cannot be composed for a unit | Partial output marked incomplete | Prompts written, plus gaps for those unwritten |
+| Traceability check fails on output | `FAILED` | The unattributable unit named |
+
+Partial output MUST be marked incomplete and MUST NOT be consumable downstream — AI-9. A build
+unit with a partially written prompt is not a smaller unit; it is an unusable one.
+
+## Gap reporting
+
+| Gap kind | Emitted when |
+| --- | --- |
+| `insufficient_scope` | The scope does not contain what a task statement would require |
+| `ambiguous_acceptance` | An acceptance criterion admits more than one reading |
+| `contract_conflict` | The scope and an interface contract cannot both be satisfied |
+
+This agent MUST NOT invent file paths, library names, version numbers, API signatures, or
+capability claims to complete a prompt — AI-7. A fabricated path in a build prompt is an
+instruction to a downstream worker, which makes it more consequential here than in a document.
+
+## Determinism boundary
+
+| Deterministic — not this agent's | This agent's contribution |
+| --- | --- |
+| Unit decomposition | The prompt text for a decomposed unit |
+| Delegation classification — AI prompt or human work item | — never this agent's |
+| Dependency ordering | — never this agent's |
+| Required review, derived from blast radius | — never this agent's |
+
+A compilation run twice on the same input produces byte-identical structural output — AI-8, ES-3.
+Prompt text sits inside that structure.
+
+## Composition
+
+Participates as the generating side of a composition with
+[Security Reviewer](/agents/security-reviewer) where a unit's scope is security-relevant — units
+touching authorisation, credential handling, data exposure, or a trust boundary.
+
+Compositions are declared in advance and orchestrated by AI Connect; this agent does not invoke
+another agent.
+
+<Note>
+**Planned.** The declaration format for composition participation is not specified — see AS-10
+in [Agent standard](/agents/agent-standard).
+</Note>
+
+## Review requirement
+
+| Output | Required review — AI-12 |
+| --- | --- |
+| Build unit prompt | Review proportionate to the unit's blast radius |
+
+Blast radius is derived by the engine, not by this agent. AI-12 records an open question on how
+blast radius should be determined — by module criticality, by data sensitivity, or both — and
+this contract does not resolve it.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial contract. |

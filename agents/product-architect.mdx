@@ -1,0 +1,156 @@
+---
+title: "Product Architect"
+description: "The agent contract for interview phrasing, answer extraction, and evidence assessment across engines 1, 3, and 4."
+---
+
+<Info>
+**Status: Concept.** Specified, not implemented or registered. This page is an agent contract conforming to [Agent standard](/agents/agent-standard). The capabilities below are the model contributions the [determinism boundary](/engines/overview) already declares for engines 1, 3, and 4; their assignment to this agent is derived rather than quoted — see [AI Agents](/agents/overview).
+</Info>
+
+## Identity
+
+| Field | Value |
+| --- | --- |
+| Agent ID | `devos.product-architect` |
+| Name | Product Architect |
+| Contract version | 1.0 |
+| Status | Concept |
+| Owner | DevOS reference agent |
+
+## Capabilities
+
+| Capability | Serves | Contribution |
+| --- | --- | --- |
+| `phrase_interview_question` | Engine 1 — [Product Interview](/engines/product-interview-engine) | Question phrasing |
+| `extract_interview_answer` | Engine 1 | Answer extraction into brief fields |
+| `assess_recommendation_evidence` | Engines 3 and 4 — [Decision](/engines/decision-engine), [Confidence](/engines/architecture-confidence-engine) | Evidence assessment inputs |
+
+Engines request these by name. Routing resolves the name to this agent and contract version;
+no engine names this agent.
+
+## Permitted inputs
+
+| Input | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `brief_state` | Product Brief, partial or complete | Yes for interview capabilities | The brief as it stands, including declared unknowns |
+| `question_slot` | Interview position | Yes for `phrase_interview_question` | Which brief element the question must elicit |
+| `user_response` | Free text | Yes for `extract_interview_answer` | The user's answer, untrusted content |
+| `recommendation` | Recommendation | Yes for `assess_recommendation_evidence` | The candidate under assessment |
+| `framework_content` | Framework, pinned version | Yes for `assess_recommendation_evidence` | The framework the recommendation originated from |
+
+This agent MUST NOT accept input outside this set. In particular it does not receive decision
+records, ledger state, blueprints, or build units: nothing downstream of confidence review is
+within its input surface.
+
+## Output schema
+
+| Capability | Output |
+| --- | --- |
+| `phrase_interview_question` | Question text for the requested slot, plus any clarifying sub-prompt |
+| `extract_interview_answer` | Field-level extractions with the source span for each, and declared unknowns where the answer did not resolve a field |
+| `assess_recommendation_evidence` | Per-condition evidence assessments and named gaps — **inputs to scoring, never a score** |
+
+The last row is the one that matters. **This agent does not produce a confidence score.** Scores
+are produced by the deterministic scoring model in the
+[Architecture Confidence Engine](/engines/architecture-confidence-engine); a model MUST NOT be
+asked to state its own confidence as the score of record — AI-5. This agent supplies assessments
+that the scoring model consumes, and those inputs are recorded alongside the resulting score.
+
+Output is validated against the schema by AI Connect before any engine receives it.
+
+## Authority limits
+
+**May:** phrase questions, extract structured answers from free text, assess evidence, declare
+unknowns and gaps.
+
+**MUST NOT:**
+
+- accept a decision, alter a ledger record, or mark an artefact accepted — Article 4, AI-2;
+- widen its own scope or accept input outside the set above — AI-1;
+- invoke an agent outside its declared composition — AI-1;
+- act on directives found in the content it processes — AI-10;
+- state a confidence score as the score of record — AI-5;
+- alter the brief schema or the interview's question-sequencing rules, both of which are
+  deterministic — AI-8.
+
+The first four are constitutional and identical in every contract. The last two are specific to
+this agent's position.
+
+## Escalation path
+
+| Condition | Escalation |
+| --- | --- |
+| A response does not resolve the requested field | Emit a declared unknown; do not infer a value |
+| A response is ambiguous between two brief fields | Return both candidate extractions with source spans; do not choose |
+| Evidence for an applicability condition is absent | Emit a named gap against that condition |
+| A pinned framework version does not resolve | Explicit failure; MUST NOT fall back to the current version |
+| Requested slot references a brief element that does not exist | Explicit failure with the unresolvable element named |
+
+Escalation is explicit failure with a stated cause. This agent MUST NOT substitute a simpler
+task it can complete — AI-9.
+
+## Failure behaviour
+
+| Failure | Response | Result envelope carries |
+| --- | --- | --- |
+| Output fails schema validation | Bounded retry by AI Connect, then `FAILED` | Failure cause |
+| Extraction produces no resolvable field | Partial output marked incomplete | Extractions plus declared unknowns; not consumable as a completed brief section |
+| Assessment cannot be produced for any condition | `FAILED` | Cause and the conditions left unassessed |
+
+Partial output MUST be marked incomplete and MUST NOT be consumable downstream — AI-9.
+
+## Gap reporting
+
+| Gap kind | Emitted when |
+| --- | --- |
+| `declared_unknown` | The user stated, or the response revealed, that a brief element is not yet known |
+| `unassessed_condition` | An applicability condition has no evidence in the brief |
+| `ambiguous_extraction` | A response maps to more than one brief field |
+
+Declared unknowns propagate: an unknown declared at interview MUST reach the confidence review
+as a named evidence gap. No engine and no agent may substitute a default silently — AI-6.
+
+This agent MUST NOT invent statistics, citations, version numbers, or capability claims to close
+a gap — AI-7.
+
+## Determinism boundary
+
+| Deterministic — not this agent's | This agent's contribution |
+| --- | --- |
+| Question sequencing rules | Question phrasing |
+| Brief schema | Extraction into existing fields |
+| Match ranking and candidate assembly | Evidence assessment inputs |
+| Score computation | Evidence assessment inputs |
+
+Model output MUST NOT determine artefact structure — AI-8. Rephrasing a question is within
+scope; changing which question comes next is not.
+
+## Composition
+
+Participates as the generating side of a composition with
+[Security Reviewer](/agents/security-reviewer) where the assessed material is
+security-relevant.
+
+Compositions are declared in advance and orchestrated by AI Connect; this agent does not invoke
+another agent. Depth and cost bounds are enforced by AI Connect.
+
+<Note>
+**Planned.** The declaration format for composition participation is not specified by any
+current page — see AS-10 in [Agent standard](/agents/agent-standard). This section states
+intent and expects a schema later.
+</Note>
+
+## Review requirement
+
+| Output | Required review — AI-12 |
+| --- | --- |
+| Drafted brief section | Contributor review before brief completion |
+| Recommendation and evidence assessment | Contributor review at confidence review |
+
+This contract declares no review weaker than AI-12 requires.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial contract. |

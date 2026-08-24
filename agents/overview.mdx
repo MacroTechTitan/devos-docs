@@ -1,0 +1,183 @@
+---
+title: "AI Agents"
+description: "The agents DevOS invokes, what each contributes, and how an agent differs from a skill, a framework, a worker, and an execution session."
+---
+
+<Info>
+**Status: Concept.** No agent is implemented or registered. The four agents below are specified against the model contributions the engine chain already declares. The registry that would make them invocable belongs to [AI Connect](/architecture/ai-connect), itself at Concept.
+</Info>
+
+## Purpose
+
+An **agent** is an AI component operating under a published contract, invoked through AI
+Connect to perform a bounded task. This section specifies the agents DevOS itself invokes.
+
+DevOS uses few agents deliberately. Five of the seven engines take a model contribution, and
+each contribution is narrow and already bounded by the
+[determinism boundary](/engines/overview): a model supplies content inside a structure the
+deterministic layer has fixed. Agents exist to supply that content, not to run the workflow.
+
+## What an agent is not
+
+The word is used loosely in the wider industry, and several DevOS concepts sit close enough to
+be confused with it. The distinctions are load-bearing because they determine which layer owns
+what.
+
+| Not an agent | What it is instead |
+| --- | --- |
+| **Engine** | One of the [seven engines](/engines/overview) that transform one artefact into the next. Engines invoke agents; they are not agents, and the engine count is unaffected by how many agents exist. |
+| **AI Connect** | The orchestration layer that resolves, envelopes, executes, validates, and attributes agent work. A platform capability, not an agent and not an engine. |
+| **AI Agent framework** | One of the eight [Frameworks](/frameworks/overview) — a reference architecture for a class of *customer* system. It is not a Core Engine and does not describe DevOS's own agents. |
+| **Skill** | Reusable procedural knowledge about how a class of work is performed. Several agents may apply one [skill](/library/skills); a skill executes nothing. |
+| **Process** | An ordered sequence of stages and gates. A [process](/library/processes) may involve agents at some stages; it is not performed by one. |
+| **Template** | A starting point instantiated into a project — see [Templates](/library/templates). |
+| **Worker / provider** | The model and the AI provider plugin that execute a request. AI Connect resolves these; an agent does not select a model or hold a credential. |
+| **Execution session** | One tracked, resumable invocation. The agent is the contracted component; the session is one run of it. |
+
+<Note>
+The last row is the one most worth internalising. **An agent is a durable, versioned contract.
+An execution session is a single, operational event.** The contract belongs in Git as a
+[Library asset](/library/asset-standard); the session belongs to AI Connect's operational
+storage. Confusing them is how a system ends up with agent definitions that cannot be reviewed
+and execution history that cannot be replayed.
+</Note>
+
+## How an agent is invoked
+
+An engine never names an agent. It requests a **capability**, and AI Connect resolves that name
+to an agent and contract version:
+
+```text
+Engine
+  → capability request
+AI Connect
+  → routing          (capability → agent + contract version)
+  → prompt envelope  (scope, context, constraints, authority limits, output schema)
+  → execution        (model access via an AI provider plugin)
+  → validation       (content against the declared output schema)
+  → attribution      (agent, contract version, model, provider, inputs read)
+  → result envelope
+Engine
+  → artefact, with provenance already attached
+```
+
+Two consequences follow, and both are structural rather than procedural:
+
+- **An engine never holds unattributed generated content**, because attribution is attached to
+  the result envelope before the engine receives it — AI-3.
+- **An engine cannot construct a cross-organisation context**, because retrieval scope is fixed
+  during envelope assembly, before retrieval runs — AI-4.
+
+## The DevOS agents
+
+Four agents cover the five model contributions the engine chain declares. Every one is at
+**Concept**: specified, not built.
+
+| Agent | Serves | Documented model contribution |
+| --- | --- | --- |
+| [Product Architect](/agents/product-architect) | Engines 1, 3, 4 | Question phrasing and answer extraction; evidence assessment inputs |
+| [Blueprint Writer](/agents/blueprint-writer) | Engine 6 | Content within a fixed structure |
+| [Implementation Planner](/agents/implementation-planner) | Engine 7 | Prompt text within a fixed scope |
+| [Security Reviewer](/agents/security-reviewer) | Cross-cutting | Security-relevant assessment — AI-12 |
+
+Two engines invoke no agent at all: the **Framework Engine** and the **Decision Ledger**.
+Validation, indexing, retrieval, and ledger state transitions are entirely deterministic, and a
+model contributing to any of them would make them non-reproducible.
+
+<Note>
+**How much of this is specified.** The [determinism boundary](/engines/overview) normatively
+fixes *which engines take a model contribution and what that contribution is*. AI-12
+normatively names the [Security Reviewer](/agents/security-reviewer) and the review its output
+requires.
+
+The **assignment of the other three names to those contributions is derived**, not quoted: the
+navigation declared four agent pages, and this mapping is the reading of them that matches the
+documented contributions without inventing a sixth contribution or leaving one uncovered. Where
+a future page assigns them differently, that page governs.
+</Note>
+
+## What every agent shares
+
+Each page below states its own contract. These properties are constitutional and identical
+across all four, so they are stated once here rather than argued four times:
+
+- **No agent accepts a decision.** No agent may convert a recommendation into a decision
+  record, alter a record, or mark an artefact accepted. The limit is not configurable, not
+  overridable by a confidence threshold, and not bypassable in automation — Article 4, AI-2.
+- **No agent widens its own scope**, accepts input outside its declared set, or invokes an
+  agent outside its declared composition — AI-1.
+- **Gaps are emitted, not filled.** An agent that lacks a required specific emits a named gap
+  rather than a plausible value — AI-6 — and never invents statistics, citations, version
+  numbers, or capability claims — AI-7.
+- **Failure is explicit.** An agent that cannot complete its task returns a stated cause. It
+  does not substitute a simpler task or present partial output as complete — AI-9.
+- **Context is data.** Directives embedded in retrieved content are ignored and recorded as
+  security events — AI-10.
+- **Review scales with consequence** — AI-12.
+
+The standard these derive from is [Agent standard](/agents/agent-standard); the copyable form
+is [Agent template](/reference/agent-template).
+
+## Composition
+
+Some engine requests are satisfied by several executions — generating content and then
+reviewing it against a standard is the case AI Connect names.
+
+A composition is **declared in advance**. Agents within one do not orchestrate each other; AI
+Connect orchestrates them, and enforces a bounded depth and total cost bound so a composition
+cannot recurse indefinitely.
+
+The Security Reviewer is the clearest example of a reviewing participant, and the reason
+review is a separate agent rather than a step inside another: an agent reviewing its own output
+provides assurance without independence.
+
+## Agents in the DevOS Library
+
+An **agent definition** — the contract — is a Library asset class. It is authored in Git,
+reviewed, versioned, and published, exactly like a skill or a process.
+
+Everything an execution produces is not:
+
+| Reusable, Git-canonical | Operational, AI Connect |
+| --- | --- |
+| Agent contract and its version history | Registry entry and current status |
+| Declared capabilities, inputs, output schema | Prompt envelope for one invocation |
+| Authority limits, escalation path, failure behaviour | Execution session, state, resumption data |
+| Composition participation | Result envelope, attribution, cost, emitted gaps |
+
+This is the boundary from [Artefact ownership](/library/ownership): reusable knowledge is
+Git-canonical and reviewable; live execution state is not. A contract you cannot diff is not
+reviewable, and an execution history you cannot query is not auditable — the split is what
+avoids both.
+
+No agent contract is published as a Library asset yet. The four pages here are specifications;
+publishing them as registered assets requires the registry.
+
+## Adding an agent
+
+An organisation may register its own agents. The registry is organisation-scoped: DevOS-provided
+agents are available to every organisation; an organisation's own are visible only to it —
+Article 7.
+
+Registration requires a conforming contract, and registering or updating one is an **Admin**
+action. There is no user-facing agent console: agents are invoked by engines, never directly by
+users, because a direct invocation path would bypass the artefact chain that gives agent output
+its meaning.
+
+## Open questions
+
+- Should the Product Architect be one agent or three? It spans the interview, matching, and
+  scoring contributions, which are related but invoked at different workflow stages by
+  different engines.
+- Where does an agent contract's non-applicability statement live? The
+  [asset standard](/library/asset-standard) requires one of every Library asset; the
+  [Agent standard](/agents/agent-standard) does not yet require it of contracts.
+- Should organisation-registered agents be listed in this section, or only DevOS reference
+  agents? The Framework Library keeps organisation adaptations private; the same question
+  applies here.
+
+## Version history
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 1.0 | 2026-08-23 | Initial page. Defines the agent model, the four DevOS agents, and the boundaries against engines, skills, workers, and sessions. |

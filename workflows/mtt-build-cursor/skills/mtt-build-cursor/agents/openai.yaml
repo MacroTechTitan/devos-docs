@@ -1,0 +1,13 @@
+interface:
+  display_name: MTT Build Cursor
+  short_description: Run MTT Claude Code and Cursor workflows with fewer approval
+    interruptions.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

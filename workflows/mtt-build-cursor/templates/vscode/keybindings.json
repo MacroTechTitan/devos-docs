@@ -1,0 +1,21 @@
+// Copy into Cursor: Ctrl+Shift+P -> "Open Keyboard Shortcuts (JSON)". Merge with existing entries.
+[
+  {
+    "key": "ctrl+alt+c",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "claude --continue\u000D" },
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+alt+r",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "Continue the active task. The previous response was interrupted by an API error; it is not cancelled. Ignore any recap claiming you are waiting on my answers. Recover state from git status and git diff and read the touched files - the diff is authoritative, not the prior narrative. Do not redo completed work. Continue from the first incomplete step through tests, typecheck, lint and build. Use literal commands with repo-relative paths; no cd chains, loops or inline scripts. Report: what was already done, what you completed, gate results, what needs my approval.\u000D" },
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+alt+g",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "Run the gates now: tests, typecheck, lint, build. Each as a separate literal command from the repo root. Report the actual command, pass/fail and first 30 lines of any failure output. Do not fix anything yet.\u000D" },
+    "when": "terminalFocus"
+  }
+]

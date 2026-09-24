@@ -11,13 +11,16 @@ const COMMANDS = {
   doctor: require('../src/commands/doctor'),
   status: require('../src/commands/status'),
   run: require('../src/commands/run'),
+  apply: require('../src/commands/apply'),
+  sync: require('../src/commands/sync'),
+  notify: require('../src/commands/notify'),
 };
+
+// Which phase shipped each implemented verb, for the help listing.
+const PHASE = { doctor: 0, status: 0, run: 0, apply: 1, sync: 1, notify: 1 };
 
 // Contract verbs from the plan that are not built yet.
 const PLANNED = {
-  apply: 1,
-  sync: 1,
-  notify: 1,
   add: 2,
   friction: 2,
   sessions: 2,
@@ -35,27 +38,27 @@ const GLOBAL_FLAGS = {
 
 function helpText() {
   const verbs = Object.values(COMMANDS)
-    .map((c) => `  ${c.name.padEnd(9)} ${c.summary}`)
+    .map((c) => `  ${c.name.padEnd(9)} ${c.summary}  [phase ${PHASE[c.name]}]`)
     .join('\n');
   const planned = Object.entries(PLANNED)
-    .map(([v, phase]) => `  ${v.padEnd(9)} (phase ${phase}, not implemented)`)
+    .map(([v, phase]) => `  ${v.padEnd(9)} not implemented  [phase ${phase}]`)
     .join('\n');
   return `devos -- DevOS dev-environment CLI
 
 Usage: devos <verb> [options]
        devos <verb> --help
 
-Verbs:
+Available now (phases 0-1):
 ${verbs}
 
-Planned:
+Planned (phases 2-3, exit 2 if called):
 ${planned}
 
 Global options:
   --help, -h   Show help (for a verb: devos <verb> --help)
   --json       Machine-readable output on stdout
   --dry-run    Print what would run, run nothing
-  --yes        Allow writes (no Phase 0 verb writes; accepted and ignored)
+  --yes        Allow writes (apply, sync). Read-only verbs ignore it
   --verbose    Name the wrapped script and shell on stderr
 
 Exit codes: 0 ok, 1 problems found, 2 usage or unsupported platform.`;

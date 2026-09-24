@@ -18,6 +18,7 @@ Ranked by friction removed per hour of build. Status: **done**, **next**, **queu
 | 12 | Port registry | Two products fighting over 3000/5173 | Convention + `sysinfo.ps1` port section | 1h | theory |
 | 13 | Repo bootstrap | Setting up CLAUDE.md, `.vscode`, deny rules by hand per repo | Workflow 001 `templates/` are the manual version | 2-3h | theory |
 | 14 | Backup of `C:\Dev` | Losing uncommitted work to a disk failure | Everything pushed is safe; uncommitted is not | 1h | theory |
+| 15 | LF enforcement for `.sh` | `core.autocrlf=true` checking shell scripts out with CRLF, so Git Bash dies on the trailing `\r` | `.gitattributes` with `*.sh text eol=lf` (built) | done | done |
 
 ## CLI
 

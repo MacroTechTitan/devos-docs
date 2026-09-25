@@ -20,7 +20,8 @@ Bare Windows box to working MTT environment.
 - [ ] Workflow 001 `skills/mtt-build-cursor/scripts/apply-settings.js` (permissions baseline)
 - [ ] Workflow 001 `skills/mtt-build-cursor/scripts/setup-all-windows.sh` (alias + override scan)
 - [ ] Cursor keybindings merged from workflow 001 `templates/vscode/keybindings.json`
-- [ ] Claude Desktop MCP config: filesystem server scoped to `C:\Dev\DevOS` and `~/.claude`
+- [ ] Claude Desktop MCP config: filesystem server scoped to `C:\Dev\DevOS`, `C:\Dev\chat` and `~/.claude`
+- [ ] Session handoff Stop hook installed and firing (`/hooks` lists `write-handoff.js`; a trivial task refreshes `C:\Dev\chat\latest.txt`). See workflow 001 `docs/session-handoff.md`
 - [ ] Skill uploaded in Claude.ai → Settings → Capabilities
 - [ ] Product repos cloned; `.env` files restored from the password manager, never from a repo
 

@@ -8,6 +8,7 @@ Run on a new machine, after a Claude Code update, or when prompts come back. Pat
 - [ ] `bash scripts/install-assets.sh` → agents and skill in `~/.claude/`
 - [ ] Skill zip uploaded in Claude.ai → Settings → Capabilities
 - [ ] `bash tools/session-runner/install-runner.sh` → `mtt-run` alias present
+- [ ] Session handoff Stop hook in `~/.claude/settings.json` (`/hooks` lists `write-handoff.js`) and `C:\Dev\chat` in the Claude Desktop filesystem MCP scope (`docs/session-handoff.md`)
 - [ ] Cursor keybindings merged from `templates/vscode/keybindings.json` (Ctrl+Alt+C / R / G)
 - [ ] Cursor default terminal is Git Bash
 - [ ] Cursor Agent approvals set to Run Everything (only if using Cursor's own agent)

@@ -33,11 +33,18 @@ Every time Claude finishes responding:
 - `C:\Dev\chat\<repo>.txt` — latest session for that repo
 - `C:\Dev\chat\latest.txt` — same content; latest session in any repo
 
-`<repo>` is the folder name of the nearest `.git` above the session `cwd`
-(falls back to the `cwd` folder name).
+`<repo>` is the folder name of the repo's main worktree
+(`git rev-parse --path-format=absolute --git-common-dir`, then its parent), so
+all linked worktrees share one file. A generic main-worktree name (`repo`,
+`main`, `src`, `app`, `code`, `trunk`) is replaced by its parent folder name:
+`C:\Dev\DealMatchAI\wt-migrate` and `C:\Dev\DealMatchAI\repo` both write
+`DealMatchAI.txt`. Without git, the `cwd` folder name is used. Each run
+overwrites the file.
 
-Header: repo, absolute path, git branch, session end timestamp (UTC and local),
-session id, transcript path.
+Header: repo, main repo path, worktree path, git branch, session end timestamp
+(UTC and local), session id, transcript path.
+
+Full user-facing doc: `../../docs/session-handoff.md`.
 
 Body, in order:
 
@@ -80,6 +87,11 @@ bash C:/Dev/DevOS/workflows/mtt-build-cursor/tools/handoff/test/run-payload.sh <
 bash C:/Dev/DevOS/workflows/mtt-build-cursor/tools/handoff/test/check-limits.sh <work-dir>
 ```
 
+```
+node C:/Dev/DevOS/workflows/mtt-build-cursor/tools/handoff/test/check-resolve.js "C:\Dev\DealMatchAI\wt-migrate=DealMatchAI"
+```
+
+`check-resolve.js` checks repo-name resolution for `<dir>=<expected>` pairs.
 `run-payload.sh` replays a saved hook payload into a scratch folder.
 `check-limits.sh` builds a synthetic transcript (`make-synthetic.js`) and checks
 the caps, stripping, payload fallback and pruning. Point both at a scratch

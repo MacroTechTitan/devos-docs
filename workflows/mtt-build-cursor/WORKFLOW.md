@@ -51,6 +51,7 @@ Build and ship MTT products as a solo founder directing Claude Code. Claude.ai i
 - `checklists/` — environment setup, window relaunch, pre-merge
 - `tools/session-runner/` — `mtt-run`: unattended Claude Code runs with automatic API-error retry, logging, and toasts
 - `tools/handoff/` — Stop hook that writes a readable session snapshot to `C:\Dev\chat\` so any Claude chat can read what Claude Code did
+- `docs/session-handoff.md` — session handoff: scope, output format, limits, install/verify, troubleshooting
 - `scripts/install-assets.sh` — installs agents and skill into `~/.claude/`
 - `templates/` — CLAUDE.md starter, per-repo window color, auto-open terminal tabs
 

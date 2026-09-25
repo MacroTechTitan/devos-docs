@@ -34,30 +34,46 @@ function readStdin() {
   }
 }
 
-// Walk up from dir to the nearest folder containing .git.
-function findRepoRoot(dir) {
-  let cur = path.resolve(dir);
-  for (;;) {
-    if (fs.existsSync(path.join(cur, '.git'))) return cur;
-    const parent = path.dirname(cur);
-    if (parent === cur) return null;
-    cur = parent;
-  }
-}
+// Main-worktree folder names that say nothing about the project. When the main
+// checkout is called one of these (C:\Dev\DealMatchAI\repo), use its parent.
+const GENERIC_NAMES = new Set(['repo', 'main', 'src', 'app', 'code', 'trunk']);
 
-function gitBranch(dir, fallback) {
+function git(dir, args) {
   try {
-    const out = execFileSync('git', ['-C', dir, 'rev-parse', '--abbrev-ref', 'HEAD'], {
+    return execFileSync('git', ['-C', dir, ...args], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
       timeout: 5000,
       windowsHide: true,
     }).trim();
-    if (out) return out;
   } catch {
-    // not a repo, or git missing
+    return ''; // not a repo, or git missing
   }
-  return fallback || '(none)';
+}
+
+// Name the handoff after the MAIN worktree, so every linked worktree of a repo
+// (C:\Dev\DealMatchAI\wt-migrate) writes the same <repo>.txt. Returns
+// { repo, mainRoot, worktree }; falls back to the cwd folder name without git.
+function resolveRepo(cwd) {
+  const dir = path.resolve(cwd);
+  const worktree = git(dir, ['rev-parse', '--show-toplevel']);
+  const common = git(dir, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
+  if (!worktree || !common) {
+    return { repo: path.basename(dir), mainRoot: dir, worktree: dir };
+  }
+  const commonDir = path.resolve(common);
+  // Normal repo: <main>/.git. Bare repo: <name>.git itself.
+  const mainRoot =
+    path.basename(commonDir).toLowerCase() === '.git' ? path.dirname(commonDir) : commonDir.replace(/\.git$/i, '');
+  let repo = path.basename(mainRoot);
+  if (GENERIC_NAMES.has(repo.toLowerCase()) && path.dirname(mainRoot) !== mainRoot) {
+    repo = path.basename(path.dirname(mainRoot));
+  }
+  return { repo, mainRoot, worktree: path.resolve(worktree) };
+}
+
+function gitBranch(dir, fallback) {
+  return git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']) || fallback || '(none)';
 }
 
 function safeName(name) {
@@ -291,10 +307,9 @@ function main() {
   }
 
   const cwd = payload.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const root = findRepoRoot(cwd) || path.resolve(cwd);
-  const repo = path.basename(root);
+  const { repo, mainRoot, worktree } = resolveRepo(cwd);
 
-  const { entries, branch: transcriptBranch } = parseTranscript(transcript, root);
+  const { entries, branch: transcriptBranch } = parseTranscript(transcript, worktree);
 
   // The transcript is written asynchronously and can miss the final reply.
   const last = typeof payload.last_assistant_message === 'string' ? payload.last_assistant_message.trim() : '';
@@ -309,8 +324,9 @@ function main() {
   const header = [
     MARKER,
     `Repo:        ${repo}`,
-    `Path:        ${root}`,
-    `Branch:      ${gitBranch(root, transcriptBranch)}`,
+    `Main repo:   ${mainRoot}`,
+    `Worktree:    ${worktree}`,
+    `Branch:      ${gitBranch(worktree, transcriptBranch)}`,
     `Session end: ${now.toISOString()} (local ${now.toLocaleString()})`,
     `Session id:  ${payload.session_id || '(unknown)'}`,
     `Transcript:  ${transcript}`,
@@ -330,9 +346,13 @@ function main() {
   prune(OUT_DIR);
 }
 
-try {
-  main();
-} catch (err) {
-  log(`failed: ${err && err.stack ? err.stack : err}`);
+if (require.main === module) {
+  try {
+    main();
+  } catch (err) {
+    log(`failed: ${err && err.stack ? err.stack : err}`);
+  }
+  process.exit(0);
 }
-process.exit(0);
+
+module.exports = { resolveRepo };

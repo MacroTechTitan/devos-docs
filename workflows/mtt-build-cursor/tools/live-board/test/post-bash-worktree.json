@@ -1,0 +1,1 @@
+{"session_id":"12345678-aaaa","cwd":"C:\\Dev\\DevOs-worktrees\\control-plane-product-model","hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command":"git status --short","description":"Show working tree status"},"tool_response":{"stdout":"","stderr":"","interrupted":false}}

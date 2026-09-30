@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DevOS Live Board</title>
+<style>
+  :root {
+    --bg: #0b0e13;
+    --panel: #11151c;
+    --panel-2: #161b24;
+    --line: #232a36;
+    --text: #d6dde8;
+    --muted: #7d8898;
+    --faint: #4a5362;
+    --tool: #6cb6ff;
+    --edit: #f0b35a;
+    --shell: #56d4c8;
+    --read: #9aa6b8;
+    --notify: #d58cf5;
+    --stop: #6fdc8c;
+    --error: #ff6b6b;
+    --mono: ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text); font: 13px/1.45 var(--sans);
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  header {
+    display: flex; align-items: center; gap: 20px; padding: 10px 16px;
+    border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  header h1 { font-size: 14px; font-weight: 600; margin: 0; letter-spacing: .02em; }
+  header h1 span { color: var(--muted); font-weight: 400; }
+  .stat { font: 12px var(--mono); color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .stat b { color: var(--text); font-weight: 500; }
+  .grow { flex: 1; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+  .dot.live { background: var(--stop); box-shadow: 0 0 6px var(--stop); }
+  .dot.connecting { background: var(--edit); }
+  .dot.down { background: var(--error); }
+  #clock { font: 13px var(--mono); color: var(--text); }
+
+  main {
+    display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+    min-height: 0;
+  }
+  section { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .title {
+    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+    font: 600 11px var(--sans); text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+    border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  .title .note { text-transform: none; letter-spacing: 0; font-weight: 400; font-family: var(--mono); color: var(--faint); }
+
+  /* feed */
+  #feedWrap { border-right: 1px solid var(--line); position: relative; }
+  #feed {
+    flex: 1; overflow-y: auto; padding: 8px 0; font: 12px/1.55 var(--mono);
+    scrollbar-color: var(--line) transparent;
+  }
+  .ev { display: grid; grid-template-columns: 70px 72px 180px 92px minmax(0, 1fr); gap: 10px; padding: 0 14px; white-space: nowrap; }
+  .ev:hover { background: var(--panel-2); }
+  .ev > span { overflow: hidden; text-overflow: ellipsis; }
+  .ev .t { color: var(--faint); }
+  .ev .sid { color: var(--muted); }
+  .ev .where { color: var(--read); }
+  .ev .kind { font-weight: 600; }
+  .ev .what { color: var(--text); }
+  .ev .what i { font-style: normal; color: var(--muted); }
+  .k-tool .kind { color: var(--tool); }
+  .k-edit .kind { color: var(--edit); }
+  .k-shell .kind { color: var(--shell); }
+  .k-read .kind { color: var(--read); }
+  .k-notify .kind, .k-notify .what { color: var(--notify); }
+  .k-stop .kind, .k-stop .what { color: var(--stop); }
+  .k-error .kind, .k-error .what i { color: var(--error); }
+  .ev.fresh { animation: flash 1.2s ease-out; }
+  @keyframes flash { from { background: #1d2a3a; } to { background: transparent; } }
+  #empty { color: var(--faint); padding: 20px 14px; font: 12px var(--mono); }
+  #resume {
+    position: absolute; right: 18px; bottom: 14px; display: none;
+    background: var(--edit); color: #1a1205; border: 0; border-radius: 4px;
+    font: 600 12px var(--mono); padding: 6px 10px; cursor: pointer;
+  }
+  #resume.show { display: block; }
+
+  /* right column */
+  #side { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); min-height: 0; min-width: 0; }
+  #sessions { overflow-y: auto; padding: 10px; display: grid; gap: 8px; align-content: start;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--tool); border-radius: 4px; padding: 8px 10px; min-width: 0; }
+  .card.s-working { border-left-color: var(--tool); }
+  .card.s-waiting { border-left-color: var(--notify); }
+  .card.s-done { border-left-color: var(--stop); }
+  .card.s-stale { border-left-color: var(--faint); opacity: .5; }
+  .card .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .card .repo { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .idle { font: 12px var(--mono); color: var(--muted); flex: none; }
+  .card .branch, .card .last, .card .meta { font: 11px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .last { color: var(--text); margin-top: 4px; }
+  .card .meta { color: var(--faint); margin-top: 2px; }
+  .badge { font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+  .s-working .badge { color: var(--tool); } .s-waiting .badge { color: var(--notify); }
+  .s-done .badge { color: var(--stop); } .s-stale .badge { color: var(--faint); }
+  #noSessions { color: var(--faint); font: 12px var(--mono); padding: 6px 4px; }
+
+  #statusPanel { border-top: 1px solid var(--line); }
+  #flags { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0; }
+  .flag { font: 11px var(--mono); color: var(--edit); border: 1px solid #4a3a1e; background: #1d170c; border-radius: 3px; padding: 1px 6px; }
+  #statusBody { overflow: auto; flex: 1; padding: 6px 0 10px; }
+  table { border-collapse: collapse; width: 100%; font: 12px var(--mono); }
+  th { position: sticky; top: 0; background: var(--bg); color: var(--muted); font-weight: 500; text-align: left; white-space: nowrap; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 3px 8px; border-bottom: 1px solid #161b23; white-space: nowrap; }
+  th:first-child, td:first-child { padding-left: 12px; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  td.branch { color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  td.warn { color: var(--edit); } td.zero { color: var(--faint); }
+  #statusMsg { color: var(--faint); font: 12px var(--mono); padding: 8px 12px; }
+
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    main { grid-template-columns: 1fr; }
+    #feedWrap { height: 60vh; border-right: 0; }
+    #side { grid-template-rows: auto auto; }
+    .ev { grid-template-columns: 62px 64px minmax(0, 1fr); }
+    .ev .where, .ev .kind { display: none; }
+    header { flex-wrap: wrap; gap: 10px 16px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>DevOS <span>live board</span></h1>
+  <div class="stat"><span class="dot connecting" id="connDot"></span><span id="conn">connecting</span></div>
+  <div class="stat">events <b id="count">0</b></div>
+  <div class="stat">sessions <b id="activeCount">0</b> active</div>
+  <div class="grow"></div>
+  <div id="clock">--:--:--</div>
+</header>
+<main>
+  <section id="feedWrap">
+    <div class="title">Live feed <span class="note" id="feedNote">C:\Dev\chat\events.jsonl</span></div>
+    <div id="feed"><div id="empty">Waiting for hook events...</div></div>
+    <button id="resume" type="button">paused - jump to live</button>
+  </section>
+  <div id="side">
+    <section>
+      <div class="title">Sessions <span class="note">stale after 5 min idle</span></div>
+      <div id="sessions"><div id="noSessions">No sessions yet.</div></div>
+    </section>
+    <section id="statusPanel">
+      <div class="title">Repos <span class="note" id="statusNote">devos status, cached 30s</span></div>
+      <div id="flags"></div>
+      <div id="statusBody"><div id="statusMsg">Loading devos status (doctor takes ~10s)...</div></div>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  const STALE_MS = 5 * 60 * 1000;
+  const DROP_MS = 60 * 60 * 1000;   // stale cards disappear after an hour
+  const MAX_ROWS = 2000;
+  const $ = (id) => document.getElementById(id);
+  const feed = $('feed');
+  const sessions = new Map();       // sessionId -> { repo, branch, last, ts, state, count }
+  let count = 0, pending = 0, follow = true;
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const hms = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  function kindOf(e) {
+    if (e.event === 'Stop' || e.event === 'SubagentStop') return ['stop', e.event === 'Stop' ? 'STOP' : 'SUBSTOP'];
+    if (e.event === 'Notification') return ['notify', 'NOTIFY'];
+    if (e.summary === 'error' || e.summary === 'interrupted') return ['error', e.tool || 'TOOL'];
+    const t = e.tool || '';
+    if (/^(Edit|Write|MultiEdit|NotebookEdit)$/.test(t)) return ['edit', t];
+    if (/^(Bash|PowerShell)$/.test(t)) return ['shell', t];
+    if (/^(Read|Grep|Glob|LS|WebFetch|WebSearch)$/.test(t)) return ['read', t];
+    return ['tool', t.replace(/^mcp__/, '').slice(0, 14) || e.event];
+  }
+
+  function nearBottom() { return feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40; }
+
+  function addRow(e, fresh) {
+    const empty = $('empty'); if (empty) empty.remove();
+    const [k, label] = kindOf(e);
+    const d = new Date(e.ts);
+    const row = document.createElement('div');
+    row.className = 'ev k-' + k + (fresh ? ' fresh' : '');
+    const where = (e.repo || '?') + (e.branch ? '/' + e.branch : '');
+    const what = e.event === 'PostToolUse'
+      ? esc(e.target) + (e.summary ? ' <i>- ' + esc(e.summary) + '</i>' : '')
+      : esc(e.summary || e.target);
+    row.innerHTML = '<span class="t">' + hms(d) + '</span><span class="sid">' + esc(e.sessionId) + '</span>' +
+      '<span class="where" title="' + esc(where) + '">' + esc(where) + '</span><span class="kind">' + esc(label) + '</span>' +
+      '<span class="what" title="' + esc(e.summary || e.target) + '">' + what + '</span>';
+    feed.appendChild(row);
+    while (feed.childElementCount > MAX_ROWS) feed.firstElementChild.remove();
+  }
+
+  function track(e) {
+    if (!e.sessionId) return;
+    const s = sessions.get(e.sessionId) || { count: 0 };
+    s.repo = e.repo; s.branch = e.branch; s.ts = Date.parse(e.ts); s.count++;
+    s.state = e.event === 'Stop' ? 'done' : e.event === 'Notification' ? 'waiting' : 'working';
+    s.last = e.event === 'PostToolUse' ? (e.tool + ' ' + (e.target || '')).trim()
+      : e.event + (e.summary ? ': ' + e.summary : '');
+    sessions.set(e.sessionId, s);
+  }
+
+  function idleText(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    if (s < 120) return s + 's';
+    if (s < 7200) return Math.floor(s / 60) + 'm ' + pad(s % 60) + 's';
+    return Math.floor(s / 3600) + 'h ' + pad(Math.floor(s / 60) % 60) + 'm';
+  }
+
+  function renderSessions() {
+    const now = Date.now();
+    const list = [...sessions.entries()]
+      .filter(([, s]) => now - s.ts < DROP_MS)
+      .sort((a, b) => b[1].ts - a[1].ts);
+    let active = 0;
+    const html = list.map(([id, s]) => {
+      const idle = now - s.ts;
+      const stale = idle > STALE_MS;
+      if (!stale) active++;
+      const state = stale ? 'stale' : s.state;
+      const label = stale ? 'stale' : ({ working: 'working', waiting: 'needs you', done: 'turn done' })[s.state];
+      return '<div class="card s-' + state + '"><div class="top"><span class="repo">' + esc(s.repo || '?') +
+        '</span><span class="idle">' + idleText(idle) + '</span></div>' +
+        '<div class="branch">' + esc(s.branch || '(no branch)') + '</div>' +
+        '<div class="last" title="' + esc(s.last) + '">' + esc(s.last) + '</div>' +
+        '<div class="meta"><span class="badge">' + label + '</span> &middot; ' + esc(id) + ' &middot; ' + s.count + ' events</div></div>';
+    }).join('');
+    $('sessions').innerHTML = html || '<div id="noSessions">No sessions in the last hour.</div>';
+    $('activeCount').textContent = active;
+  }
+
+  function onEvent(e, fresh) {
+    count++;
+    $('count').textContent = count.toLocaleString();
+    const stick = follow && nearBottom();
+    addRow(e, fresh);
+    track(e);
+    if (follow || stick) feed.scrollTop = feed.scrollHeight;
+    else if (fresh) { pending++; showResume(); }
+  }
+
+  function showResume() {
+    const b = $('resume');
+    b.textContent = 'paused' + (pending ? ' - ' + pending + ' new' : '') + ' - jump to live';
+    b.classList.toggle('show', !follow);
+  }
+
+  feed.addEventListener('scroll', () => {
+    const atBottom = nearBottom();
+    if (atBottom && !follow) { follow = true; pending = 0; }
+    else if (!atBottom && follow) follow = false;
+    showResume();
+  });
+  $('resume').addEventListener('click', () => { follow = true; pending = 0; feed.scrollTop = feed.scrollHeight; showResume(); });
+
+  function setConn(state, text) {
+    $('connDot').className = 'dot ' + state;
+    $('conn').textContent = text;
+  }
+
+  let live = false;
+  function connect() {
+    const es = new EventSource('/events');
+    setConn('connecting', 'connecting');
+    es.addEventListener('reset', () => {
+      live = false; count = 0; sessions.clear();
+      feed.innerHTML = '<div id="empty">Waiting for hook events...</div>';
+    });
+    es.addEventListener('live', () => {
+      live = true; setConn('live', 'live');
+      feed.scrollTop = feed.scrollHeight; renderSessions();
+    });
+    es.onmessage = (m) => { try { onEvent(JSON.parse(m.data), live); } catch (_) {} if (live) renderSessions(); };
+    es.onerror = () => setConn(es.readyState === EventSource.CLOSED ? 'down' : 'connecting', es.readyState === EventSource.CLOSED ? 'disconnected' : 'reconnecting');
+  }
+
+  function num(v, cls) {
+    if (v == null || v === '') return '<td class="n zero">-</td>';
+    return '<td class="n ' + (v ? cls || '' : 'zero') + '">' + esc(v) + '</td>';
+  }
+
+  async function loadStatus() {
+    try {
+      const r = await fetch('/status', { cache: 'no-store' });
+      const j = await r.json();
+      const rows = (j.status && j.status.rows) || [];
+      const flags = (j.doctor && j.doctor.flags) || [];
+      $('flags').innerHTML = flags.map((f) => '<span class="flag">' + esc(f) + '</span>').join('');
+      if (j.status && j.status.error) { $('statusBody').innerHTML = '<div id="statusMsg">devos status failed: ' + esc(j.status.error) + '</div>'; }
+      else {
+        rows.sort((a, b) => (a.DaysIdle == null ? 99 : a.DaysIdle) - (b.DaysIdle == null ? 99 : b.DaysIdle) || String(a.Repo).localeCompare(b.Repo));
+        $('statusBody').innerHTML = '<table><thead><tr><th>Repo</th><th>Branch</th><th class="n">Dirty</th><th class="n">Ahead</th><th class="n">Behind</th><th class="n">Idle (d)</th><th class="n">Trees</th></tr></thead><tbody>' +
+          rows.map((x) => '<tr title="' + esc(x.Path) + '"><td>' + esc(x.Repo) + '</td><td class="branch">' + esc(x.Branch) + '</td>' +
+            num(x.Dirty, 'warn') + num(x.Ahead, 'warn') + num(x.Behind, 'warn') + num(x.DaysIdle) + num(x.Trees) + '</tr>').join('') +
+          '</tbody></table>';
+      }
+      const g = j.generated ? new Date(j.generated) : null;
+      $('statusNote').textContent = 'devos status' + (g ? ' @ ' + hms(g) : '') + ', cached 30s';
+    } catch (err) {
+      $('statusBody').innerHTML = '<div id="statusMsg">/status unavailable: ' + esc(err.message) + '</div>';
+    }
+  }
+
+  setInterval(() => { $('clock').textContent = hms(new Date()); renderSessions(); }, 1000);
+  $('clock').textContent = hms(new Date());
+  connect();
+  loadStatus();
+  setInterval(loadStatus, 30 * 1000);
+})();
+</script>
+</body>
+</html>

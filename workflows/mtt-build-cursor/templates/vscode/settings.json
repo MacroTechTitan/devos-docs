@@ -1,0 +1,10 @@
+{
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#1E4D8C",
+    "titleBar.activeForeground": "#FFFFFF",
+    "titleBar.inactiveBackground": "#163A69",
+    "statusBar.background": "#1E4D8C",
+    "statusBar.foreground": "#FFFFFF"
+  }
+}

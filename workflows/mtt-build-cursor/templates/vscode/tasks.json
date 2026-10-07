@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "claude",
+      "type": "shell",
+      "command": "claude --dangerously-skip-permissions --continue",
+      "options": { "shell": { "executable": "C:\\Program Files\\Git\\bin\\bash.exe", "args": ["--login", "-i", "-c"] } },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "focus": true },
+      "runOptions": { "runOn": "folderOpen" }
+    },
+    {
+      "label": "bash",
+      "type": "shell",
+      "command": "exec bash --login -i",
+      "options": { "shell": { "executable": "C:\\Program Files\\Git\\bin\\bash.exe", "args": ["-c"] } },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated" },
+      "runOptions": { "runOn": "folderOpen" }
+    },
+    {
+      "label": "pwsh",
+      "type": "shell",
+      "command": "powershell.exe -NoLogo -NoExit",
+      "options": { "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated" },
+      "runOptions": { "runOn": "folderOpen" }
+    }
+  ]
+}
